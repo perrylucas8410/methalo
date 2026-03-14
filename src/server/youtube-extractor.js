@@ -2,16 +2,16 @@ async function getPlayer(videoId) {
     const html = await fetch(`https://www.youtube.com/watch?v=${videoId}`)
         .then(r => r.text());
 
-    // Multiple patterns to catch all YouTube formats
+    // SAFE patterns using new RegExp() only
     const patterns = [
-        /ytInitialPlayerResponse\s*=\s*(\{.+?\});/,
-        /var\s+ytInitialPlayerResponse\s*=\s*(\{.+?\});/,
-        /window
+        new RegExp('ytInitialPlayerResponse\\s*=\\s*(\\{.+?\\});'),
+        new RegExp('var\\s+ytInitialPlayerResponse\\s*=\\s*(\\{.+?\\});'),
+        new RegExp('window\
 
-\["ytInitialPlayerResponse"\]
+\["ytInitialPlayerResponse"\\]
 
-\s*=\s*(\{.+?\});/,
-        /ytInitialPlayerResponse\s*=\s*JSON\.parse\("(.+?)"\);/
+\\s*=\\s*(\\{.+?\\});'),
+        new RegExp('ytInitialPlayerResponse\\s*=\\s*JSON\\.parse\\("(.+?)"\\);')
     ];
 
     for (const p of patterns) {
@@ -20,7 +20,7 @@ async function getPlayer(videoId) {
             try {
                 const raw = match[1];
 
-                // If JSON.parse("...") form
+                // JSON.parse("...") case
                 if (!raw.startsWith("{")) {
                     return JSON.parse(JSON.parse(raw));
                 }
