@@ -34,9 +34,6 @@ module.exports = async function extract(videoId) {
         height: best?.height || null
     };
 };
-(function() {
-    if (!location.href.includes("youtube.com/watch")) return;
-
     const videoId = new URLSearchParams(location.search).get("v");
     if (!videoId) return;
 
