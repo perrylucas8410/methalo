@@ -484,6 +484,8 @@ function renderContent() {
 }
 
 function handleIframeLoad(tabId, iframe) {
+  console.log("[Methalo] handleIframeLoad fired for tab", tabId);
+
   const tab = state.tabs.find((t) => t.id === tabId);
   if (!tab) return;
 
@@ -493,15 +495,18 @@ function handleIframeLoad(tabId, iframe) {
   try {
     const doc = iframe.contentDocument || iframe.contentWindow.document;
 
-    // ⭐ Inject YouTube unlocker script into the iframe (correct position)
+    // ⭐ Inject YouTube unlocker script into the iframe
     try {
       const script = doc.createElement("script");
       script.src = "/youtube-injector.js";
       script.type = "text/javascript";
-      doc.head.appendChild(script);
+      (doc.head || doc.documentElement).appendChild(script);
+      console.log("[Methalo] Injector injected into iframe");
     } catch (e) {
       console.warn("Injector failed to load:", e);
     }
+
+    // ...rest of your code...
 
     if (doc) {
       title = doc.title || tab.url;
