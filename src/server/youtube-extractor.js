@@ -1,8 +1,9 @@
-async function getPlayer(videoId) {
+const API_KEY = "PASTE_YOUR_INNERTUBE_API_KEY_HERE";
+
+async function fetchHtmlPlayer(videoId) {
     const html = await fetch(`https://www.youtube.com/watch?v=${videoId}`)
         .then(r => r.text());
 
-    // Try simple string searches instead of regex
     const markers = [
         'ytInitialPlayerResponse = ',
         'var ytInitialPlayerResponse = ',
@@ -12,66 +13,142 @@ async function getPlayer(videoId) {
 
     for (const marker of markers) {
         const idx = html.indexOf(marker);
-        if (idx !== -1) {
-            let start = idx + marker.length;
+        if (idx === -1) continue;
 
-            // JSON.parse("...") case
-            if (marker.includes('JSON.parse')) {
-                const end = html.indexOf('");', start);
-                const raw = html.substring(start, end);
+        const start = idx + marker.length;
 
-                const parsed = JSON.parse(JSON.parse(raw));
-                return parsed;
-            }
-
-            // Normal {...} case
-            const end = html.indexOf('};', start) + 1;
+        // JSON.parse("...") case
+        if (marker.indexOf('JSON.parse') !== -1) {
+            const end = html.indexOf('");', start);
+            if (end === -1) continue;
             const raw = html.substring(start, end);
-
-            const parsed = JSON.parse(raw);
-            return parsed;
+            return JSON.parse(JSON.parse(raw));
         }
+
+        // Normal {...} case
+        const end = html.indexOf('};', start);
+        if (end === -1) continue;
+        const raw = html.substring(start, end + 1);
+        return JSON.parse(raw);
     }
 
-    throw new Error("Could not extract player response");
+    return null;
+}
+
+async function fetchAndroidPlayer(videoId) {
+    const res = await fetch(
+        "https://www.youtube.com/youtubei/v1/player?key=" + API_KEY,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "User-Agent": "com.google.android.youtube/18.48.37 (Linux; U; Android 11)"
+            },
+            body: JSON.stringify({
+                context: {
+                    client: {
+                        clientName: "ANDROID",
+                        clientVersion: "18.48.37"
+                    }
+                },
+                videoId
+            })
+        }
+    );
+
+    if (!res.ok) {
+        throw new Error("Android player API failed with status " + res.status);
+    }
+
+    return res.json();
+}
+
+async function getPlayer(videoId) {
+    // 1) Try HTML player response
+    try {
+        const htmlPlayer = await fetchHtmlPlayer(videoId);
+        if (htmlPlayer &&
+            htmlPlayer.streamingData &&
+            ((htmlPlayer.streamingData.formats && htmlPlayer.streamingData.formats.length) ||
+             (htmlPlayer.streamingData.adaptiveFormats && htmlPlayer.streamingData.adaptiveFormats.length))) {
+            return htmlPlayer;
+        }
+    } catch (e) {
+        console.error("HTML player parse failed:", e);
+    }
+
+    // 2) Fallback to Android internal API
+    const androidPlayer = await fetchAndroidPlayer(videoId);
+    return androidPlayer;
+}
+
+function collectFormats(data) {
+    const sd = data.streamingData || {};
+    const formats = sd.formats || [];
+    const adaptive = sd.adaptiveFormats || [];
+    return formats.concat(adaptive);
+}
+
+function getUrlFromFormat(format) {
+    if (format.url) return format.url;
+
+    const cipher = format.signatureCipher || format.cipher;
+    if (!cipher) return null;
+
+    const params = new URLSearchParams(cipher);
+    const base = params.get("url");
+    const sig = params.get("sig");
+    const sp = params.get("sp") || "signature";
+
+    if (base && sig) {
+        return base + "&" + sp + "=" + sig;
+    }
+
+    // Many modern videos use "s" (obfuscated); full deciphering would require parsing player JS.
+    return null;
 }
 
 module.exports = async function extract(videoId) {
     const data = await getPlayer(videoId);
 
-    // ⭐ DEBUG LOGS — THIS IS WHAT WE NEED
     console.log("=== Extractor Debug ===");
     console.log("Video ID:", videoId);
     console.log("Formats:", data.streamingData?.formats?.length || 0);
     console.log("Adaptive:", data.streamingData?.adaptiveFormats?.length || 0);
     console.log("========================");
 
-    const formats = [
-        ...(data.streamingData?.formats || []),
-        ...(data.streamingData?.adaptiveFormats || [])
-    ];
+    const allFormats = collectFormats(data);
 
-    const combined = formats.filter(f =>
+    const mp4Formats = allFormats.filter(f =>
         f.mimeType &&
-        f.mimeType.includes("video/mp4") &&
-        f.audioQuality &&
-        f.url
+        f.mimeType.indexOf("video/mp4") !== -1
     );
 
-    let best = combined.sort((a, b) => (b.height || 0) - (a.height || 0))[0];
+    mp4Formats.sort((a, b) => (b.height || 0) - (a.height || 0));
+
+    let best = null;
+    for (const f of mp4Formats) {
+        const url = getUrlFromFormat(f);
+        if (url) {
+            best = { format: f, url };
+            break;
+        }
+    }
 
     if (!best) {
-        best = formats.find(f =>
-            f.mimeType &&
-            f.mimeType.includes("video/mp4") &&
-            f.audioQuality &&
-            f.url
-        );
+        // Fallback: any format with a direct URL
+        for (const f of allFormats) {
+            const url = getUrlFromFormat(f);
+            if (url) {
+                best = { format: f, url };
+                break;
+            }
+        }
     }
 
     return {
-        title: data.videoDetails.title,
-        url: best?.url || null,
-        height: best?.height || null
+        title: data.videoDetails?.title || "Unknown title",
+        url: best ? best.url : null,
+        height: best && best.format ? best.format.height || null : null
     };
 };
