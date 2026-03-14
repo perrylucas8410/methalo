@@ -6,11 +6,11 @@ async function getPlayer(videoId) {
     const patterns = [
         /ytInitialPlayerResponse\s*=\s*(\{.+?\});/,
         /var\s+ytInitialPlayerResponse\s*=\s*(\{.+?\});/,
-        new RegExp('window\
+        /window
 
-\["ytInitialPlayerResponse"\\]
+\["ytInitialPlayerResponse"\]
 
-\\s*=\\s*(\\{.+?\\});'),
+\s*=\s*(\{.+?\});/,
         /ytInitialPlayerResponse\s*=\s*JSON\.parse\("(.+?)"\);/
     ];
 
@@ -47,8 +47,8 @@ module.exports = async function extract(videoId) {
     const combined = formats.filter(f =>
         f.mimeType &&
         f.mimeType.includes("video/mp4") &&
-        f.audioQuality &&        // must have audio
-        f.url                    // must have direct URL
+        f.audioQuality &&
+        f.url
     );
 
     // Highest resolution combined stream
