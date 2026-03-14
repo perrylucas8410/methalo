@@ -1,7 +1,7 @@
 (function () {
     // Only run on YouTube watch pages
-    if (!location.hostname.includes("youtube.com")) return;
-    if (!location.pathname.startsWith("/watch")) return;
+    if (!location.search.includes("v=")) return;
+    if (!location.pathname.includes("watch")) return;
 
     // Wait for YouTube + Rammerhead to finish loading
     document.addEventListener("DOMContentLoaded", tryInject, true);
