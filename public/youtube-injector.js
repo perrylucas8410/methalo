@@ -1,36 +1,33 @@
 (function () {
-    // Run ONLY on YouTube watch pages
-    if (location.hostname.indexOf("youtube.com") === -1) return;
-    if (location.pathname !== "/watch") return;
+    // Only run on YouTube watch pages
+    if (!location.hostname.includes("youtube.com")) return;
+    if (!location.pathname.startsWith("/watch")) return;
 
-    // Delay until Rammerhead finishes rewriting the page
-    document.addEventListener("DOMContentLoaded", function () {
-        tryInject();
-    }, true);
+    // Wait for YouTube + Rammerhead to finish loading
+    document.addEventListener("DOMContentLoaded", tryInject, true);
 
     function tryInject() {
-        var params = new URLSearchParams(location.search);
-        var videoId = params.get("v");
+        const params = new URLSearchParams(location.search);
+        const videoId = params.get("v");
         if (!videoId) return;
 
-        // Find the YouTube player
-        var player =
-            document.getElementById("player") ||
-            document.querySelector("#movie_player") ||
+        // Modern YouTube player container
+        const playerContainer =
+            document.querySelector("ytd-watch-flexy #player") ||
+            document.querySelector("#player") ||
             document.querySelector("video");
 
-        if (!player) {
-            // Retry a few times because YouTube loads late
+        if (!playerContainer) {
             setTimeout(tryInject, 300);
             return;
         }
 
-        // Replace the player with our button
-        player.parentNode.replaceChild(createUnlockedButton(videoId), player);
+        // Replace the entire player area
+        playerContainer.replaceWith(createUnlockedButton(videoId));
     }
 
     function createUnlockedButton(id) {
-        var wrapper = document.createElement("div");
+        const wrapper = document.createElement("div");
         wrapper.style.padding = "40px";
         wrapper.style.textAlign = "center";
         wrapper.style.background = "#111";
@@ -38,11 +35,11 @@
         wrapper.style.borderRadius = "12px";
         wrapper.style.marginTop = "20px";
 
-        var title = document.createElement("h2");
+        const title = document.createElement("h2");
         title.textContent = "YouTube playback is blocked.";
         wrapper.appendChild(title);
 
-        var btn = document.createElement("button");
+        const btn = document.createElement("button");
         btn.textContent = "Play in Unlocked Mode";
         btn.style.padding = "12px 20px";
         btn.style.fontSize = "18px";
