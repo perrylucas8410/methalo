@@ -94,24 +94,4 @@ module.exports = function setupRoutes(proxyServer, sessionStore, logger) {
         const serverInfo = config.getServerInfo(req);
         res.end((serverInfo.port || '').toString());
     });
-// --- YouTube Unlocked API ---
-const extract = require("./youtube-extractor");
-
-proxyServer.GET('/api/youtube', async (req, res) => {
-    const { id } = new URLPath(req.url).getParams();
-
-    if (!id) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify({ error: "Missing id parameter" }));
-    }
-
-    try {
-        const data = await extract(id);
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(data));
-    } catch (err) {
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: err.toString() }));
-    }
-});
 };

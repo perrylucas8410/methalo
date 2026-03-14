@@ -1,5 +1,3 @@
-const fetch = require("node-fetch");
-
 async function getPlayer(videoId) {
     const html = await fetch(`https://www.youtube.com/watch?v=${videoId}`)
         .then(r => r.text());
