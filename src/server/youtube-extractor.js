@@ -19,13 +19,17 @@ async function getPlayer(videoId) {
             if (marker.includes('JSON.parse')) {
                 const end = html.indexOf('");', start);
                 const raw = html.substring(start, end);
-                return JSON.parse(JSON.parse(raw));
+
+                const parsed = JSON.parse(JSON.parse(raw));
+                return parsed;
             }
 
             // Normal {...} case
             const end = html.indexOf('};', start) + 1;
             const raw = html.substring(start, end);
-            return JSON.parse(raw);
+
+            const parsed = JSON.parse(raw);
+            return parsed;
         }
     }
 
@@ -34,6 +38,13 @@ async function getPlayer(videoId) {
 
 module.exports = async function extract(videoId) {
     const data = await getPlayer(videoId);
+
+    // ⭐ DEBUG LOGS — THIS IS WHAT WE NEED
+    console.log("=== Extractor Debug ===");
+    console.log("Video ID:", videoId);
+    console.log("Formats:", data.streamingData?.formats?.length || 0);
+    console.log("Adaptive:", data.streamingData?.adaptiveFormats?.length || 0);
+    console.log("========================");
 
     const formats = [
         ...(data.streamingData?.formats || []),
