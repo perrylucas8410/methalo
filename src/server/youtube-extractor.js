@@ -1,4 +1,4 @@
-const API_KEY = "PASTE_YOUR_INNERTUBE_API_KEY_HERE";
+const API_KEY = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
 
 async function fetchHtmlPlayer(videoId) {
     const html = await fetch(`https://www.youtube.com/watch?v=${videoId}`)
