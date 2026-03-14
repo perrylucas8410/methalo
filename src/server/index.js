@@ -1,3 +1,5 @@
+const express = require("express");
+const bodyParser = require("body-parser");
 const cluster = require('cluster');
 if (cluster.isMaster) {
     require('dotenv-flow').config();
@@ -35,6 +37,78 @@ const proxyServer = new RammerheadProxy({
     disableHttp2: config.disableHttp2
 });
 
+// --------------------
+// METHALO YOUTUBE BACKEND
+// --------------------
+const app = express();
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Allow CORS for Methalo frontend
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "*");
+    next();
+});
+
+// Placeholder extractor — replace with real logic later
+async function extractYoutubeInfo(videoId) {
+    return {
+        id: videoId,
+        title: "Placeholder Title",
+        author: "Placeholder Channel",
+        thumbnail: "",
+        formats: [
+            {
+                itag: 18,
+                qualityLabel: "360p",
+                mimeType: "video/mp4",
+                url: `https://example.com/dummy-${videoId}.mp4`
+            }
+        ]
+    };
+}
+
+// GET /api/youtube/info?id=VIDEO_ID
+app.get("/api/youtube/info", async (req, res) => {
+    const videoId = req.query.id;
+    if (!videoId) return res.status(400).json({ error: "Missing id" });
+
+    try {
+        const info = await extractYoutubeInfo(videoId);
+        res.json(info);
+    } catch (e) {
+        console.error("YouTube info error:", e);
+        res.status(500).json({ error: "Failed to extract video info" });
+    }
+});
+
+// Proxy stream: /api/youtube/stream?url=ENCODED_URL
+app.get("/api/youtube/stream", async (req, res) => {
+    const url = req.query.url;
+    if (!url) return res.status(400).send("Missing url");
+
+    try {
+        const target = decodeURIComponent(url);
+        const upstream = await fetch(target, {
+            headers: {
+                range: req.headers.range || ""
+            }
+        });
+
+        res.status(upstream.status);
+        upstream.headers.forEach((value, key) => {
+            if (key.toLowerCase() === "transfer-encoding") return;
+            res.setHeader(key, value);
+        });
+
+        upstream.body.pipe(res);
+    } catch (e) {
+        console.error("Stream proxy error:", e);
+        res.status(500).send("Stream error");
+    }
+});
+
 if (config.publicDir) addStaticDirToProxy(proxyServer, config.publicDir);
 
 const fileCacheOptions = { logger, ...config.fileCacheSessionConfig };
@@ -63,30 +137,21 @@ if (!config.enableWorkers) {
 
 // spawn workers if multithreading is enabled //
 if (config.enableWorkers) {
-    /**
-     * @type {import('sticky-session-custom/lib/sticky/master').MasterOptions}
-     */
     const stickyOptions = {
         workers: config.workers,
         generatePrehashArray(req) {
-            let sessionId = getSessionId(req.url); // /sessionid/url
+            let sessionId = getSessionId(req.url);
             if (!sessionId) {
-                // /editsession?id=sessionid
                 const parsed = new URL(req.url, 'https://a.com');
                 sessionId = parsed.searchParams.get('id') || parsed.searchParams.get('sessionId');
                 if (!sessionId) {
-                    // sessionId is in referer header
                     for (let i = 0; i < req.headers.length; i += 2) {
                         if (req.headers[i].toLowerCase() === 'referer') {
                             sessionId = getSessionId(req.headers[i + 1]);
                             break;
                         }
                     }
-                    if (!sessionId) {
-                        // if there is still none, it's likely a static asset, in which case,
-                        // just delegate it to a worker
-                        sessionId = ' ';
-                    }
+                    if (!sessionId) sessionId = ' ';
                 }
             }
             return sessionId.split('').map((e) => e.charCodeAt());
@@ -101,7 +166,6 @@ if (config.enableWorkers) {
     }
 
     if (closeMasters[0]) {
-        // master process //
         const formatUrl = (secure, hostname, port) => `${secure ? 'https' : 'http'}://${hostname}:${port}`;
         logger.info(
             `Rammerhead proxy load balancer is listening on ${formatUrl(
@@ -111,7 +175,6 @@ if (config.enableWorkers) {
             )}`
         );
 
-        // nicely close proxy server and save sessions to store before we exit
         exitHook(async (done) => {
             logger.info('Master received exit signal. Shutting down workers');
             for (const closeMaster of closeMasters) {
@@ -125,6 +188,10 @@ if (config.enableWorkers) {
     }
 }
 
-// if you want to just extend the functionality of this proxy server, you can
-// easily do so using this. mainly used for debugging
+// --------------------
+// ATTACH EXPRESS TO RAMMERHEAD
+// --------------------
+proxyServer.server1.on("request", app);
+
+// export proxy server
 module.exports = proxyServer;
