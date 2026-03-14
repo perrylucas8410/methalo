@@ -2,33 +2,30 @@ async function getPlayer(videoId) {
     const html = await fetch(`https://www.youtube.com/watch?v=${videoId}`)
         .then(r => r.text());
 
-    // SAFE patterns using new RegExp() only
-    const patterns = [
-        new RegExp('ytInitialPlayerResponse\\s*=\\s*(\\{.+?\\});'),
-        new RegExp('var\\s+ytInitialPlayerResponse\\s*=\\s*(\\{.+?\\});'),
-        new RegExp('window\
-
-\["ytInitialPlayerResponse"\\]
-
-\\s*=\\s*(\\{.+?\\});'),
-        new RegExp('ytInitialPlayerResponse\\s*=\\s*JSON\\.parse\\("(.+?)"\\);')
+    // Try simple string searches instead of regex
+    const markers = [
+        'ytInitialPlayerResponse = ',
+        'var ytInitialPlayerResponse = ',
+        'window["ytInitialPlayerResponse"] = ',
+        'ytInitialPlayerResponse = JSON.parse("'
     ];
 
-    for (const p of patterns) {
-        const match = html.match(p);
-        if (match) {
-            try {
-                const raw = match[1];
+    for (const marker of markers) {
+        const idx = html.indexOf(marker);
+        if (idx !== -1) {
+            let start = idx + marker.length;
 
-                // JSON.parse("...") case
-                if (!raw.startsWith("{")) {
-                    return JSON.parse(JSON.parse(raw));
-                }
-
-                return JSON.parse(raw);
-            } catch (e) {
-                console.error("Parse error:", e);
+            // JSON.parse("...") case
+            if (marker.includes('JSON.parse')) {
+                const end = html.indexOf('");', start);
+                const raw = html.substring(start, end);
+                return JSON.parse(JSON.parse(raw));
             }
+
+            // Normal {...} case
+            const end = html.indexOf('};', start) + 1;
+            const raw = html.substring(start, end);
+            return JSON.parse(raw);
         }
     }
 
@@ -43,7 +40,6 @@ module.exports = async function extract(videoId) {
         ...(data.streamingData?.adaptiveFormats || [])
     ];
 
-    // Combined audio+video MP4 streams
     const combined = formats.filter(f =>
         f.mimeType &&
         f.mimeType.includes("video/mp4") &&
@@ -51,10 +47,8 @@ module.exports = async function extract(videoId) {
         f.url
     );
 
-    // Highest resolution combined stream
     let best = combined.sort((a, b) => (b.height || 0) - (a.height || 0))[0];
 
-    // Fallback: ANY combined stream
     if (!best) {
         best = formats.find(f =>
             f.mimeType &&
