@@ -607,7 +607,7 @@ async function init() {
   // Load shuffle dictionary once per session
   if (sessionId) {
     try {
-      const res = await fetch(`/api/shuffleDict?id=${encodeURIComponent(sessionId)}`);
+      const res = await fetch(`/${sessionId}/shuffleDict`);
       const dict = await res.json();
       if (dict) shuffleDict = dict;
     } catch (e) {
