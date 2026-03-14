@@ -1,49 +1,62 @@
-(function() {
-    if (!location.href.includes("youtube.com/watch")) return;
+(function () {
+    // Run ONLY on YouTube watch pages
+    if (location.hostname.indexOf("youtube.com") === -1) return;
+    if (location.pathname !== "/watch") return;
 
-    const videoId = new URLSearchParams(location.search).get("v");
-    if (!videoId) return;
+    // Delay until Rammerhead finishes rewriting the page
+    document.addEventListener("DOMContentLoaded", function () {
+        tryInject();
+    }, true);
 
-    const interval = setInterval(() => {
-        const player = document.getElementById("player") ||
-                       document.querySelector("video") ||
-                       document.querySelector("#movie_player");
+    function tryInject() {
+        var params = new URLSearchParams(location.search);
+        var videoId = params.get("v");
+        if (!videoId) return;
 
-        if (!player) return;
+        // Find the YouTube player
+        var player =
+            document.getElementById("player") ||
+            document.querySelector("#movie_player") ||
+            document.querySelector("video");
 
-        clearInterval(interval);
+        if (!player) {
+            // Retry a few times because YouTube loads late
+            setTimeout(tryInject, 300);
+            return;
+        }
 
-        player.replaceWith(createUnlockedButton(videoId));
-    }, 500);
+        // Replace the player with our button
+        player.parentNode.replaceChild(createUnlockedButton(videoId), player);
+    }
 
     function createUnlockedButton(id) {
-        const wrapper = document.createElement("div");
-        wrapper.style = `
-            padding: 40px;
-            text-align: center;
-            background: #111;
-            color: white;
-            border-radius: 12px;
-            margin-top: 20px;
-        `;
+        var wrapper = document.createElement("div");
+        wrapper.style.padding = "40px";
+        wrapper.style.textAlign = "center";
+        wrapper.style.background = "#111";
+        wrapper.style.color = "white";
+        wrapper.style.borderRadius = "12px";
+        wrapper.style.marginTop = "20px";
 
-        wrapper.innerHTML = `
-            <h2>YouTube playback is blocked.</h2>
-            <button id="unlockBtn" style="
-                padding: 12px 20px;
-                font-size: 18px;
-                cursor: pointer;
-                border-radius: 8px;
-                border: none;
-                background: #ff0000;
-                color: white;
-            ">Play in Unlocked Mode</button>
-        `;
+        var title = document.createElement("h2");
+        title.textContent = "YouTube playback is blocked.";
+        wrapper.appendChild(title);
 
-        wrapper.querySelector("#unlockBtn").onclick = () => {
-            location.href = `/youtube-unlocked.html?video=${id}`;
+        var btn = document.createElement("button");
+        btn.textContent = "Play in Unlocked Mode";
+        btn.style.padding = "12px 20px";
+        btn.style.fontSize = "18px";
+        btn.style.cursor = "pointer";
+        btn.style.borderRadius = "8px";
+        btn.style.border = "none";
+        btn.style.background = "#ff0000";
+        btn.style.color = "white";
+
+        btn.onclick = function () {
+            location.href = "/youtube-unlocked.html?video=" + encodeURIComponent(id);
         };
 
+        wrapper.appendChild(btn);
         return wrapper;
     }
 })();
