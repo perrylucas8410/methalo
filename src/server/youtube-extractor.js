@@ -2,15 +2,15 @@ async function getPlayer(videoId) {
     const html = await fetch(`https://www.youtube.com/watch?v=${videoId}`)
         .then(r => r.text());
 
-    // Try multiple patterns
+    // Multiple patterns to catch all YouTube formats
     const patterns = [
         /ytInitialPlayerResponse\s*=\s*(\{.+?\});/,
         /var\s+ytInitialPlayerResponse\s*=\s*(\{.+?\});/,
-        /window
+        new RegExp('window\
 
-\["ytInitialPlayerResponse"\]
+\["ytInitialPlayerResponse"\\]
 
-\s*=\s*(\{.+?\});/,
+\\s*=\\s*(\\{.+?\\});'),
         /ytInitialPlayerResponse\s*=\s*JSON\.parse\("(.+?)"\);/
     ];
 
@@ -18,10 +18,14 @@ async function getPlayer(videoId) {
         const match = html.match(p);
         if (match) {
             try {
-                const json = match[1].startsWith("{")
-                    ? match[1]
-                    : JSON.parse(match[1]); // handle JSON.parse("...")
-                return JSON.parse(json);
+                const raw = match[1];
+
+                // If JSON.parse("...") form
+                if (!raw.startsWith("{")) {
+                    return JSON.parse(JSON.parse(raw));
+                }
+
+                return JSON.parse(raw);
             } catch (e) {
                 console.error("Parse error:", e);
             }
@@ -39,19 +43,21 @@ module.exports = async function extract(videoId) {
         ...(data.streamingData?.adaptiveFormats || [])
     ];
 
-    // Filter for combined audio+video MP4
+    // Combined audio+video MP4 streams
     const combined = formats.filter(f =>
+        f.mimeType &&
         f.mimeType.includes("video/mp4") &&
-        f.audioQuality &&
-        f.url
+        f.audioQuality &&        // must have audio
+        f.url                    // must have direct URL
     );
 
-    // Pick highest resolution
+    // Highest resolution combined stream
     let best = combined.sort((a, b) => (b.height || 0) - (a.height || 0))[0];
 
     // Fallback: ANY combined stream
     if (!best) {
         best = formats.find(f =>
+            f.mimeType &&
             f.mimeType.includes("video/mp4") &&
             f.audioQuality &&
             f.url
