@@ -20,7 +20,6 @@ module.exports = async function extract(videoId) {
         ...(data.streamingData?.adaptiveFormats || [])
     ];
 
-    // Pick the best MP4 stream
     const stream = formats.find(f => f.mimeType.includes("video/mp4"));
 
     return {
