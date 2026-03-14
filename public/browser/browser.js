@@ -483,7 +483,6 @@ function renderContent() {
   });
 }
 
-// ---------- IFRAME LOAD HANDLER ----------
 function handleIframeLoad(tabId, iframe) {
   const tab = state.tabs.find((t) => t.id === tabId);
   if (!tab) return;
@@ -493,6 +492,17 @@ function handleIframeLoad(tabId, iframe) {
 
   try {
     const doc = iframe.contentDocument || iframe.contentWindow.document;
+
+    // ⭐ Inject YouTube unlocker script into the iframe (correct position)
+    try {
+      const script = doc.createElement("script");
+      script.src = "/youtube-injector.js";
+      script.type = "text/javascript";
+      doc.head.appendChild(script);
+    } catch (e) {
+      console.warn("Injector failed to load:", e);
+    }
+
     if (doc) {
       title = doc.title || tab.url;
       const iconEl = doc.querySelector("link[rel~='icon']");
