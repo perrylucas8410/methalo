@@ -94,7 +94,6 @@ module.exports = function setupRoutes(proxyServer, sessionStore, logger) {
         const serverInfo = config.getServerInfo(req);
         res.end((serverInfo.port || '').toString());
     });
-// --- YouTube Unlocked API ---
 const extract = require("./youtube-extractor");
 
 proxyServer.GET('/api/youtube', async (req, res) => {
