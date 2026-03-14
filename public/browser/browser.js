@@ -2,6 +2,40 @@
 // METHALO BROWSER ENGINE (SINGLE-PAGE)
 // ---------------------------------------------------------
 
+// ---------- RAMMERHEAD SHUFFLER (from original UI) ----------
+const baseDictionary = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz~-';
+const shuffledIndicator = '_rhs';
+
+function mod(n, m) {
+  return ((n % m) + m) % m;
+}
+
+class StrShuffler {
+  constructor(dictionary) {
+    this.dictionary = dictionary;
+  }
+  shuffle(str) {
+    if (str.startsWith(shuffledIndicator)) return str;
+
+    let out = '';
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charAt(i);
+      const idx = baseDictionary.indexOf(char);
+
+      if (char === '%' && str.length - i >= 3) {
+        out += char + str.charAt(++i) + str.charAt(++i);
+      } else if (idx === -1) {
+        out += char;
+      } else {
+        out += this.dictionary.charAt(mod(idx + i, baseDictionary.length));
+      }
+    }
+    return shuffledIndicator + out;
+  }
+}
+
+let shuffleDict = null; // loaded once per session
+
 // ---------- GLOBAL STATE ----------
 function createTab(url = "") {
   return {
@@ -35,7 +69,16 @@ function buildSessionUrl(url) {
   if (!url) return "about:blank";
   const sessionId = localStorage.getItem("sessionId");
   if (!sessionId) return "about:blank";
-  return `/${sessionId}/${encodeURIComponent(url)}`;
+
+  // EXACT original Rammerhead behavior:
+  // If shuffleDict exists → shuffle(url)
+  // If not → plain url
+  if (shuffleDict) {
+    const shuffler = new StrShuffler(shuffleDict);
+    return `/${sessionId}/${shuffler.shuffle(url)}`;
+  } else {
+    return `/${sessionId}/${url}`;
+  }
 }
 
 // ---------- URL RESOLUTION ----------
@@ -472,7 +515,7 @@ function handleIframeLoad(tabId, iframe) {
   renderToolbar();
 }
 
-// ---------- NEW TAB PAGE (B3 + G2 + L2) ----------
+// ---------- NEW TAB PAGE ----------
 function createNewTabPage(tabId) {
   const root = document.createElement("div");
   root.className = "new-tab-page";
@@ -533,14 +576,29 @@ function createNewTabPage(tabId) {
   content.appendChild(searchContainer);
 
   root.appendChild(gradientOverlay);
+  root.appendChild
+  root.appendChild(gradientOverlay);
   root.appendChild(particles);
   root.appendChild(content);
 
-  return root;
+return root;
 }
 
 // ---------- INIT ----------
-function init() {
+async function init() {
+  const sessionId = localStorage.getItem("sessionId");
+
+  // Load shuffle dictionary once per session
+  if (sessionId) {
+    try {
+      const res = await fetch(`/api/shuffleDict?id=${encodeURIComponent(sessionId)}`);
+      const dict = await res.json();
+      if (dict) shuffleDict = dict;
+    } catch (e) {
+      console.warn("Failed to load shuffleDict, using plain URLs", e);
+    }
+  }
+
   renderAll();
 }
 
