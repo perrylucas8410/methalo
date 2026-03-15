@@ -13,7 +13,6 @@ export function rewriteHTML(html, baseUrl) {
         const original = el.getAttribute(attr);
         if (!original) continue;
 
-        // Ignore anchors, javascript:, mailto:, etc.
         if (original.startsWith("#")) continue;
         if (original.startsWith("javascript:")) continue;
         if (original.startsWith("mailto:")) continue;
@@ -26,10 +25,7 @@ export function rewriteHTML(html, baseUrl) {
     }
   });
 
-  // Convert DOM back to HTML
   let output = root.toString();
-
-  // Inject JS shim LAST
   output = injectShim(output);
 
   return output;
