@@ -1,40 +1,6 @@
 // ---------------------------------------------------------
-// METHALO BROWSER ENGINE (SINGLE-PAGE)
+// METHALO BROWSER ENGINE (SINGLE-PAGE, UV VERSION)
 // ---------------------------------------------------------
-
-// ---------- RAMMERHEAD SHUFFLER (from original UI) ----------
-const baseDictionary = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz~-';
-const shuffledIndicator = '_rhs';
-
-function mod(n, m) {
-  return ((n % m) + m) % m;
-}
-
-class StrShuffler {
-  constructor(dictionary) {
-    this.dictionary = dictionary;
-  }
-  shuffle(str) {
-    if (str.startsWith(shuffledIndicator)) return str;
-
-    let out = '';
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charAt(i);
-      const idx = baseDictionary.indexOf(char);
-
-      if (char === '%' && str.length - i >= 3) {
-        out += char + str.charAt(++i) + str.charAt(++i);
-      } else if (idx === -1) {
-        out += char;
-      } else {
-        out += this.dictionary.charAt(mod(idx + i, baseDictionary.length));
-      }
-    }
-    return shuffledIndicator + out;
-  }
-}
-
-let shuffleDict = null;
 
 // ---------- GLOBAL STATE ----------
 function createTab(url = "") {
@@ -59,12 +25,15 @@ const state = {
 
 state.activeTabId = state.tabs[0].id;
 
+// ---------- IMPORT UV ENGINE ----------
+import { Engine } from "/browser/engines/engine-croxy.js";
+
 // ---------- DOM REFERENCES ----------
 const tabBarEl = document.getElementById("tab-bar");
 const toolbarEl = document.getElementById("toolbar");
 const contentEl = document.getElementById("content-area");
 
-// ⭐ MINIMAL ADDITION — Update profile UI
+// ---------- PROFILE UI ----------
 function updateProfileUI() {
   const user = window.METHALO_USER;
   if (!user) return;
@@ -85,20 +54,6 @@ function updateProfileUI() {
     const headerImg = document.querySelector(".profile-menu-avatar img");
     if (headerImg) headerImg.src = user.photoURL || "/icons/profile-default.png";
   });
-}
-
-// ---------- RAMMERHEAD SESSION URL BUILDER ----------
-function buildSessionUrl(url) {
-  if (!url) return "about:blank";
-  const sessionId = localStorage.getItem("sessionId");
-  if (!sessionId) return "about:blank";
-
-  if (shuffleDict) {
-    const shuffler = new StrShuffler(shuffleDict);
-    return `/${sessionId}/${shuffler.shuffle(url)}`;
-  } else {
-    return `/${sessionId}/${url}`;
-  }
 }
 
 // ---------- URL RESOLUTION ----------
@@ -215,7 +170,8 @@ function refresh(tabId) {
   if (iframe) iframe.src = iframe.src;
   renderAll();
 }
- // ---------- TAB BAR ----------
+
+// ---------- TAB BAR ----------
 function renderTabBar() {
   tabBarEl.innerHTML = "";
 
@@ -276,6 +232,7 @@ function renderTabBar() {
   newTabBtn.addEventListener("click", () => addTab());
   tabBarEl.appendChild(newTabBtn);
 
+  // PROFILE UI
   const profileContainer = document.createElement("div");
   profileContainer.id = "profile-container";
 
@@ -316,7 +273,6 @@ function renderTabBar() {
   header.appendChild(headerAvatar);
   header.appendChild(headerText);
 
-  // ⭐ MINIMAL ADDITION — refresh profile UI
   updateProfileUI();
 
   const divider = document.createElement("div");
@@ -325,8 +281,6 @@ function renderTabBar() {
   const manageItem = document.createElement("div");
   manageItem.className = "profile-menu-item";
   manageItem.textContent = "Manage Account";
-
-  // ⭐ MINIMAL ADDITION — redirect
   manageItem.addEventListener("click", () => {
     window.location.href = "/account/account.html";
   });
@@ -334,7 +288,6 @@ function renderTabBar() {
   const signOutItem = document.createElement("div");
   signOutItem.className = "profile-menu-item";
   signOutItem.textContent = "Sign Out";
-
   signOutItem.addEventListener("click", () => {
     if (window.methaloSignOut) window.methaloSignOut();
     menu.classList.remove("visible");
@@ -362,7 +315,6 @@ function renderTabBar() {
 
   tabBarEl.appendChild(profileContainer);
 
-  // ⭐ MINIMAL ADDITION — keep profile fresh
   updateProfileUI();
 }
 
@@ -474,7 +426,10 @@ function renderContent() {
     if (tab.url) {
       const iframe = document.createElement("iframe");
       iframe.className = "browser-tab-content";
-      iframe.src = buildSessionUrl(tab.url);
+
+      // ⭐ UV ENGINE
+      iframe.src = Engine.buildUrl(tab.url);
+
       iframe.title = tab.title;
       iframe.sandbox =
         "allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads";
@@ -505,35 +460,29 @@ function renderContent() {
   });
 }
 
-// ---------- IFRAME LOAD HANDLER ----------
+// ---------- IFRAME LOAD HANDLER (UV-SAFE) ----------
 function handleIframeLoad(tabId, iframe) {
   const tab = state.tabs.find((t) => t.id === tabId);
   if (!tab) return;
 
-  let title = tab.url;
+  let title;
   let favicon;
 
   try {
-    const doc = iframe.contentDocument || iframe.contentWindow.document;
-    if (doc) {
-      title = doc.title || tab.url;
-      const iconEl = doc.querySelector("link[rel~='icon']");
-      if (iconEl && iconEl.href) {
-        favicon = iconEl.href;
-      } else {
-        const origin = new URL(tab.url).origin;
-        favicon = origin + "/favicon.ico";
-      }
-    }
+    const urlObj = new URL(tab.url);
+    title = urlObj.hostname;
+    favicon = urlObj.origin + "/favicon.ico";
   } catch {
-    try {
-      title = new URL(tab.url).hostname;
-    } catch {
-      title = tab.url;
-    }
+    title = tab.url;
+    favicon = "/icons/default-favicon.png";
   }
 
-  updateTab(tabId, { title, favicon, isLoading: false });
+  updateTab(tabId, {
+    title,
+    favicon,
+    isLoading: false
+  });
+
   renderTabBar();
   renderToolbar();
 }
@@ -543,22 +492,19 @@ function createNewTabPage(tabId) {
   const root = document.createElement("div");
   root.className = "new-tab-page";
 
-  // Keep gradient background
   const gradientOverlay = document.createElement("div");
   gradientOverlay.className = "new-tab-gradient-overlay";
 
-  // Keep particles (optional — remove if you don't want them)
   const particles = document.createElement("div");
   particles.className = "new-tab-particles";
 
-  // Empty content area (no logo, no text, no search bar)
   const content = document.createElement("div");
   content.className = "new-tab-content";
 
-  // Placeholder text (you can change or remove this)
   const placeholder = document.createElement("div");
   placeholder.className = "new-tab-placeholder";
-  placeholder.textContent = "This browser is a beta and is current in development and some things wont work such as youtube and most AI services like ChatGPT or Copilot I'm currently working on making that all work please be patient.";
+  placeholder.textContent =
+    "This browser is a beta and is currently in development. Some things won't work such as YouTube and most AI services like ChatGPT or Copilot. I'm working on making everything functional — thank you for your patience.";
 
   content.appendChild(placeholder);
 
@@ -578,28 +524,15 @@ function renderAll() {
 
 // ---------- INIT ----------
 async function init() {
-  const sessionId = localStorage.getItem("sessionId");
-
-  // Load shuffle dictionary once per session
-  if (sessionId) {
-    try {
-      const res = await fetch(`/api/shuffleDict?id=${encodeURIComponent(sessionId)}`);
-      const dict = await res.json();
-      if (dict) shuffleDict = dict;
-    } catch (e) {
-      console.warn("Failed to load shuffleDict, using plain URLs", e);
-    }
-  }
-
   renderAll();
 }
 
-// ---------- WAIT FOR FIREBASE USER BEFORE RUNNING UI ----------
+// ---------- WAIT FOR FIREBASE USER ----------
 if (!window.METHALO_USER) {
   const waitForUser = setInterval(() => {
     if (window.METHALO_USER) {
       clearInterval(waitForUser);
-      init(); // start browser AFTER user is ready
+      init();
     }
   }, 50);
 } else {
