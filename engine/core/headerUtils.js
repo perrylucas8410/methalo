@@ -4,18 +4,18 @@ export function filterResponseHeaders(headers, res) {
 
     const lower = key.toLowerCase();
 
-    // Skip headers we rewrite or that break proxying
     if ([
       "set-cookie",
       "content-length",
       "transfer-encoding",
       "location",
-
-      // CRITICAL: security headers that block JS shim + navigation
       "content-security-policy",
       "x-frame-options",
       "referrer-policy",
-      "strict-transport-security"
+      "strict-transport-security",
+      "cross-origin-opener-policy",
+      "cross-origin-embedder-policy",
+      "cross-origin-resource-policy"
     ].includes(lower)) {
       continue;
     }
