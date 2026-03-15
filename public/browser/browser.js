@@ -558,7 +558,7 @@ function createNewTabPage(tabId) {
   // Placeholder text (you can change or remove this)
   const placeholder = document.createElement("div");
   placeholder.className = "new-tab-placeholder";
-  placeholder.textContent = "Your homepage info will go here.";
+  placeholder.textContent = "This browser is a beta and is current in development and some things wont work such as youtube and most AI services like ChatGPT or Copilot I'm currently working on making that all work please be patient.";
 
   content.appendChild(placeholder);
 
