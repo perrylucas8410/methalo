@@ -70,6 +70,9 @@ function buildSessionUrl(url) {
   const sessionId = localStorage.getItem("sessionId");
   if (!sessionId) return "about:blank";
 
+  // EXACT original Rammerhead behavior:
+  // If shuffleDict exists → shuffle(url)
+  // If not → plain url
   if (shuffleDict) {
     const shuffler = new StrShuffler(shuffleDict);
     return `/${sessionId}/${shuffler.shuffle(url)}`;
@@ -199,6 +202,7 @@ function renderAll() {
   renderToolbar();
   renderContent();
 }
+
 // ---------- TAB BAR ----------
 function renderTabBar() {
   tabBarEl.innerHTML = "";
@@ -447,41 +451,10 @@ function renderContent() {
     if (tab.url) {
       const iframe = document.createElement("iframe");
       iframe.className = "browser-tab-content";
-
       iframe.src = buildSessionUrl(tab.url);
       iframe.title = tab.title;
       iframe.sandbox =
-        "allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads";
-      iframe.allow =
-        "accelerometer; autoplay; clipboard-read; clipboard-write; encrypted-media; fullscreen; geolocation; gyroscope; microphone; picture-in-picture";
-
-      state.iframeMap[tab.id] = iframe;
-
-      iframe.addEventListener("load", () => {
-        handleIframeLoad(tab.id, iframe);
-      });
-
-      iframe.addEventListener("error", () => {
-        updateTab(tab.id, {
-          title: "Error",
-          isLoading: false
-        });
-        renderTabBar();
-        renderToolbar();
-      });
-
-      wrapper.appendChild(iframe);
-    } else {
-      wrapper.appendChild(createNewTabPage(tab.id));
-    }
-
-    contentEl.appendChild(wrapper);
-  });
-}
-
-      iframe.title = tab.title;
-      iframe.sandbox =
-        "allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads";
+                      "allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads";
       iframe.allow =
         "accelerometer; autoplay; clipboard-read; clipboard-write; encrypted-media; fullscreen; geolocation; gyroscope; microphone; picture-in-picture";
 
@@ -511,23 +484,14 @@ function renderContent() {
 
 // ---------- IFRAME LOAD HANDLER ----------
 function handleIframeLoad(tabId, iframe) {
-  const tab = state.tabs.find(function (t) { return t.id === tabId; });
+  const tab = state.tabs.find((t) => t.id === tabId);
   if (!tab) return;
 
   let title = tab.url;
   let favicon;
 
   try {
-    const win = iframe.contentWindow;
-
-    // Intercept popup attempts and turn them into Methalo tabs (fallback override)
-    win.open = function (url) {
-  if (!url) return null;
-  iframe.src = buildSessionUrl(url);
-  return null;
-};
-
-    const doc = win.document;
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
     if (doc) {
       title = doc.title || tab.url;
       const iconEl = doc.querySelector("link[rel~='icon']");
@@ -538,15 +502,15 @@ function handleIframeLoad(tabId, iframe) {
         favicon = origin + "/favicon.ico";
       }
     }
-  } catch (e) {
+  } catch {
     try {
       title = new URL(tab.url).hostname;
-    } catch (e2) {
+    } catch {
       title = tab.url;
     }
   }
 
-  updateTab(tabId, { title: title, favicon: favicon, isLoading: false });
+  updateTab(tabId, { title, favicon, isLoading: false });
   renderTabBar();
   renderToolbar();
 }
@@ -612,10 +576,12 @@ function createNewTabPage(tabId) {
   content.appendChild(searchContainer);
 
   root.appendChild(gradientOverlay);
+  root.appendChild
+  root.appendChild(gradientOverlay);
   root.appendChild(particles);
   root.appendChild(content);
 
-  return root;
+return root;
 }
 
 // ---------- INIT ----------
