@@ -124,11 +124,15 @@ setupRoutes(proxyServer, sessionStore, logger);
 // ⭐ Attach Express BEFORE Rammerhead handles requests
 proxyServer.server1.prependListener("request", (req, res) => {
     if (req.url.startsWith("/api/youtube/")) {
-        // Express handles YouTube API
         app(req, res);
-        return; // ⭐ Prevent Rammerhead from touching this request
+
+        // ⭐ Prevent Rammerhead from handling this request
+        res.once("finish", () => {
+            res._rh_expressHandled = true;
+        });
+
+        return;
     }
-    // Otherwise let Rammerhead handle it normally
 });
 
 if (!config.enableWorkers) {
