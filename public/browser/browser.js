@@ -544,7 +544,7 @@ function handleIframeLoad(tabId, iframe) {
         favicon = origin + "/favicon.ico";
       }
     }
-  } catch {
+  } catch (e) {
     try {
       title = new URL(tab.url).hostname;
     } catch {
