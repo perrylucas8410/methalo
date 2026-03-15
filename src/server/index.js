@@ -121,17 +121,15 @@ sessionStore.attachToProxy(proxyServer);
 setupPipeline(proxyServer, sessionStore);
 setupRoutes(proxyServer, sessionStore, logger);
 
-// ⭐ Attach Express AFTER Rammerhead routes are set up
-proxyServer.server1.on("request", (req, res) => {
+// ⭐ Attach Express BEFORE Rammerhead handles requests
+proxyServer.server1.prependListener("request", (req, res) => {
     if (req.url.startsWith("/api/youtube/")) {
-        // Let Express handle YouTube API
+        // Express handles YouTube API
         app(req, res);
-    } else {
-        // Let Rammerhead handle everything else
-        proxyServer._onRequest(req, res);
+        return; // ⭐ Prevent Rammerhead from touching this request
     }
+    // Otherwise let Rammerhead handle it normally
 });
-
 
 if (!config.enableWorkers) {
     const formatUrl = (secure, hostname, port) => `${secure ? 'https' : 'http'}://${hostname}:${port}`;
