@@ -4,9 +4,9 @@ export function filterResponseHeaders(headers, res) {
 
     const lower = key.toLowerCase();
 
-    if (["set-cookie", "content-length", "transfer-encoding"].includes(lower)) {
-      continue;
-    }
+    if (["set-cookie", "content-length", "transfer-encoding", "location"].includes(lower)) {
+  continue;
+}
 
     res.setHeader(key, value);
   }
