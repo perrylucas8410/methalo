@@ -493,21 +493,44 @@ function handleIframeLoad(tabId, iframe) {
   try {
     const win = iframe.contentWindow;
 
-    // ⭐ Intercept Rammerhead's window.open so navigation stays in the same tab
-    win.open = function (url) {
+    // ⭐ Convert popup attempts into new Methalo tabs
+    win.open = function(url, name, features) {
       if (!url) return null;
-      navigate(tabId, url);
-      return null;
+
+      addTab(url);
+
+      return {
+        closed: false,
+        close() { this.closed = true; },
+        focus() {},
+        blur() {}
+      };
     };
 
-    // ⭐ Intercept target="_blank" links inside the iframe
-    win.addEventListener("click", (e) => {
-      const anchor = e.target.closest("a[target='_blank']");
-      if (anchor && anchor.href) {
-        e.preventDefault();
-        navigate(tabId, anchor.href);
+    // ⭐ Extract title + favicon
+    const doc = win.document;
+    if (doc) {
+      title = doc.title || tab.url;
+      const iconEl = doc.querySelector("link[rel~='icon']");
+      if (iconEl && iconEl.href) {
+        favicon = iconEl.href;
+      } else {
+        const origin = new URL(tab.url).origin;
+        favicon = origin + "/favicon.ico";
       }
-    });
+    }
+  } catch {
+    try {
+      title = new URL(tab.url).hostname;
+    } catch {
+      title = tab.url;
+    }
+  }
+
+  updateTab(tabId, { title, favicon, isLoading: false });
+  renderTabBar();
+  renderToolbar();
+}
 
     // ⭐ Extract title + favicon
     const doc = win.document;
