@@ -449,14 +449,19 @@ function renderContent() {
       iframe.className = "browser-tab-content";
 
       // ⭐ EARLY POPUP OVERRIDE (critical fix)
-      iframe.onload = function () {
-        try {
-          const win = iframe.contentWindow;
+iframe.onload = function () {
+  try {
+    const win = iframe.contentWindow;
 
-          win.open = function (url) {
-  if (!url) return null;
-  iframe.src = buildSessionUrl(url);
-  return null;
+    win.open = function (url) {
+      if (!url) return null;
+      iframe.src = buildSessionUrl(url);
+      return null;
+    };
+
+  } catch (e) {
+    console.warn("Early override failed:", e);
+  }
 };
 
       // Now safe to set src
