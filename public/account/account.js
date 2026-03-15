@@ -1,4 +1,5 @@
-// Using Firebase compat (firebase-app.js + firebase-auth.js)
+firebase.initializeApp(window.firebaseConfig);
+
 const auth = firebase.auth();
 const provider = new firebase.auth.GoogleAuthProvider();
 
