@@ -64,15 +64,44 @@ const tabBarEl = document.getElementById("tab-bar");
 const toolbarEl = document.getElementById("toolbar");
 const contentEl = document.getElementById("content-area");
 
+// ---------- YOUTUBE DETECTOR ----------
+function extractYoutubeId(url) {
+  try {
+    const u = new URL(url);
+
+    // Standard watch URL
+    if (u.hostname.includes("youtube.com") && u.pathname === "/watch") {
+      return u.searchParams.get("v");
+    }
+
+    // Shorts
+    if (u.hostname.includes("youtube.com") && u.pathname.startsWith("/shorts/")) {
+      return u.pathname.split("/")[2] || null;
+    }
+
+    // youtu.be short links
+    if (u.hostname === "youtu.be") {
+      return u.pathname.slice(1) || null;
+    }
+  } catch (e) {}
+
+  return null;
+}
+
 // ---------- RAMMERHEAD SESSION URL BUILDER ----------
 function buildSessionUrl(url) {
   if (!url) return "about:blank";
+
+  // ⭐ YOUTUBE INTERCEPTOR — bypass Rammerhead entirely
+  const ytId = extractYoutubeId(url);
+  if (ytId) {
+    return `/youtube-unlocked.html?v=${encodeURIComponent(ytId)}`;
+  }
+
+  // ⭐ Normal Rammerhead behavior
   const sessionId = localStorage.getItem("sessionId");
   if (!sessionId) return "about:blank";
 
-  // EXACT original Rammerhead behavior:
-  // If shuffleDict exists → shuffle(url)
-  // If not → plain url
   if (shuffleDict) {
     const shuffler = new StrShuffler(shuffleDict);
     return `/${sessionId}/${shuffler.shuffle(url)}`;
