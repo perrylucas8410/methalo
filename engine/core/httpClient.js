@@ -11,6 +11,7 @@ export default async function httpClient(req, res, url) {
   delete headers.host;
   delete headers.connection;
   delete headers["content-length"];
+  delete headers["accept-encoding"];
 
   if (session.cookies.length) {
     headers["cookie"] = session.cookies.join("; ");
