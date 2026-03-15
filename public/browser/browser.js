@@ -543,60 +543,24 @@ function createNewTabPage(tabId) {
   const root = document.createElement("div");
   root.className = "new-tab-page";
 
+  // Keep gradient background
   const gradientOverlay = document.createElement("div");
   gradientOverlay.className = "new-tab-gradient-overlay";
 
+  // Keep particles (optional — remove if you don't want them)
   const particles = document.createElement("div");
   particles.className = "new-tab-particles";
 
+  // Empty content area (no logo, no text, no search bar)
   const content = document.createElement("div");
   content.className = "new-tab-content";
 
-  const logoWrap = document.createElement("div");
-  logoWrap.className = "new-tab-logo";
+  // Placeholder text (you can change or remove this)
+  const placeholder = document.createElement("div");
+  placeholder.className = "new-tab-placeholder";
+  placeholder.textContent = "Your homepage info will go here.";
 
-  const logoImg = document.createElement("img");
-  logoImg.src = "/logos/methalo-logo.svg";
-  logoImg.alt = "Methalo";
-  logoWrap.appendChild(logoImg);
-
-  const title = document.createElement("div");
-  title.className = "new-tab-title";
-  title.textContent = "Methalo Browser";
-
-  const subtitle = document.createElement("div");
-  subtitle.className = "new-tab-subtitle";
-  subtitle.textContent = "A focused, modern browsing experience.";
-
-  const searchContainer = document.createElement("div");
-  searchContainer.className = "new-tab-search-container";
-
-  const search = document.createElement("div");
-  search.className = "new-tab-search";
-
-  const searchIcon = document.createElement("div");
-  searchIcon.className = "new-tab-search-icon";
-
-  const input = document.createElement("input");
-  input.className = "new-tab-search-input";
-  input.type = "text";
-  input.placeholder = "Search the web or enter a URL";
-
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      navigate(tabId, input.value);
-    }
-  });
-
-  search.appendChild(searchIcon);
-  search.appendChild(input);
-  searchContainer.appendChild(search);
-
-  content.appendChild(logoWrap);
-  content.appendChild(title);
-  content.appendChild(subtitle);
-  content.appendChild(searchContainer);
+  content.appendChild(placeholder);
 
   root.appendChild(gradientOverlay);
   root.appendChild(particles);
