@@ -42,3 +42,6 @@ document.getElementById("change-password").addEventListener("click", async () =>
     errorBox.textContent = "Incorrect current password";
   }
 });
+document.getElementById("forgot-password").addEventListener("click", () => {
+  window.location.href = "/account/reset.html";
+});
