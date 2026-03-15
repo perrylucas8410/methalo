@@ -121,12 +121,17 @@ sessionStore.attachToProxy(proxyServer);
 setupPipeline(proxyServer, sessionStore);
 setupRoutes(proxyServer, sessionStore, logger);
 
-// nicely close proxy server and save sessions to store before we exit
-exitHook(() => {
-    logger.info(`(server) Received exit signal, closing proxy server`);
-    proxyServer.close();
-    logger.info('(server) Closed proxy server');
+// ⭐ Attach Express AFTER Rammerhead routes are set up
+proxyServer.server1.on("request", (req, res) => {
+    if (req.url.startsWith("/api/youtube/")) {
+        // Let Express handle YouTube API
+        app(req, res);
+    } else {
+        // Let Rammerhead handle everything else
+        proxyServer._onRequest(req, res);
+    }
 });
+
 
 if (!config.enableWorkers) {
     const formatUrl = (secure, hostname, port) => `${secure ? 'https' : 'http'}://${hostname}:${port}`;
@@ -191,7 +196,6 @@ if (config.enableWorkers) {
 // --------------------
 // ATTACH EXPRESS TO RAMMERHEAD
 // --------------------
-proxyServer.server1.on("request", app);
 
 // export proxy server
 module.exports = proxyServer;
