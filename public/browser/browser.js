@@ -446,26 +446,31 @@ function renderContent() {
 
     if (tab.url) {
       const iframe = document.createElement("iframe");
-      iframe.className = "browser-tab-content";
+iframe.className = "browser-tab-content";
 
-      // ⭐ EARLY POPUP OVERRIDE (critical fix)
-iframe.onload = function () {
-  try {
-    const win = iframe.contentWindow;
-
-    win.open = function (url) {
+// Load a blank document first so we can override window.open BEFORE Rammerhead loads
+iframe.srcdoc = `
+  <script>
+    window.open = function(url) {
       if (!url) return null;
-      iframe.src = buildSessionUrl(url);
+      parent.postMessage({ type: "navigate-in-iframe", url: url }, "*");
       return null;
     };
+  </script>
+`;
 
-  } catch (e) {
-    console.warn("Early override failed:", e);
+// Listen for navigation requests from the srcdoc sandbox
+window.addEventListener("message", (event) => {
+  if (event.data?.type === "navigate-in-iframe") {
+    const url = event.data.url;
+    iframe.src = buildSessionUrl(url);
   }
-};
+});
 
-      // Now safe to set src
-      iframe.src = buildSessionUrl(tab.url);
+// After override is installed, load the real page
+setTimeout(() => {
+  iframe.src = buildSessionUrl(tab.url);
+}, 0);
 
       iframe.title = tab.title;
       iframe.sandbox =
