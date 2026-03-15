@@ -3,14 +3,17 @@ firebase.initializeApp(window.firebaseConfig);
 const auth = firebase.auth();
 const provider = new firebase.auth.GoogleAuthProvider();
 
-// Load user info
+// PROTECT PAGE
 auth.onAuthStateChanged((user) => {
-  if (!user) return;
+  if (!user) {
+    window.location.href = "/index.html";
+    return;
+  }
 
+  // Load user info
   document.getElementById("account-email").textContent = user.email;
   document.getElementById("account-name").value = user.displayName || "";
 
-  // Google link status
   const googleLinked = user.providerData.some(p => p.providerId === "google.com");
   document.getElementById("google-status").textContent =
     googleLinked ? "Google account linked" : "No Google account linked";
