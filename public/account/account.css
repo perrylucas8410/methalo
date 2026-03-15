@@ -51,6 +51,7 @@ input {
   border: none;
   background: #1f2127;
   color: white;
+  margin-bottom: 6px;
 }
 
 button {
