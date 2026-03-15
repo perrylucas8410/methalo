@@ -22,20 +22,28 @@
       <label>Display Name</label>
       <input type="text" id="account-name">
       <button id="save-name">Save</button>
+
+      <!-- Inline message for display name -->
+      <div id="name-message" class="message"></div>
     </div>
 
     <!-- GOOGLE LINKING -->
     <div class="section">
       <label>Linked Google Account</label>
       <div id="google-status"></div>
+
       <button id="link-google">Link Google Account</button>
       <button id="unlink-google">Unlink Google Account</button>
+
+      <!-- Inline message for Google linking -->
+      <div id="google-message" class="message"></div>
     </div>
 
     <!-- PASSWORD CHANGE -->
     <div class="section">
       <label>Change Password</label>
 
+      <!-- Field-level error (password mismatch, etc.) -->
       <div id="password-error" class="error-message"></div>
 
       <input type="password" id="current-password" placeholder="Current password">
@@ -45,6 +53,9 @@
       <button id="change-password">Change Password</button>
 
       <div id="forgot-password" class="forgot-link">Forgot password?</div>
+
+      <!-- Inline message for password success/error -->
+      <div id="password-message" class="message"></div>
     </div>
 
   </div>
