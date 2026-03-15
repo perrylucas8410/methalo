@@ -45,7 +45,19 @@ export default async function httpClient(req, res, url) {
 
   // Otherwise → stream normally
   res.status(upstream.statusCode);
-  filterResponseHeaders(upstream.headers, res);
+
+// Handle redirect headers
+if (upstream.statusCode >= 300 && upstream.statusCode < 400) {
+  const loc = upstream.headers["location"];
+  if (loc) {
+    const absolute = new URL(loc, url).toString();
+    const proxied = "/proxy?url=" + encodeURIComponent(absolute);
+    res.setHeader("Location", proxied);
+  }
+}
+
+// Filter other headers
+filterResponseHeaders(upstream.headers, res);
 
   upstream.body.pipe(res);
 }
