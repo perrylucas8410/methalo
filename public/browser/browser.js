@@ -64,44 +64,15 @@ const tabBarEl = document.getElementById("tab-bar");
 const toolbarEl = document.getElementById("toolbar");
 const contentEl = document.getElementById("content-area");
 
-// ---------- YOUTUBE DETECTOR ----------
-function extractYoutubeId(url) {
-  try {
-    const u = new URL(url);
-
-    // Standard watch URL
-    if (u.hostname.includes("youtube.com") && u.pathname === "/watch") {
-      return u.searchParams.get("v");
-    }
-
-    // Shorts
-    if (u.hostname.includes("youtube.com") && u.pathname.startsWith("/shorts/")) {
-      return u.pathname.split("/")[2] || null;
-    }
-
-    // youtu.be short links
-    if (u.hostname === "youtu.be") {
-      return u.pathname.slice(1) || null;
-    }
-  } catch (e) {}
-
-  return null;
-}
-
 // ---------- RAMMERHEAD SESSION URL BUILDER ----------
 function buildSessionUrl(url) {
   if (!url) return "about:blank";
-
-  // ⭐ YOUTUBE INTERCEPTOR — bypass Rammerhead entirely
-  const ytId = extractYoutubeId(url);
-  if (ytId) {
-    return `/youtube-unlocked.html?v=${encodeURIComponent(ytId)}`;
-  }
-
-  // ⭐ Normal Rammerhead behavior
   const sessionId = localStorage.getItem("sessionId");
   if (!sessionId) return "about:blank";
 
+  // EXACT original Rammerhead behavior:
+  // If shuffleDict exists → shuffle(url)
+  // If not → plain url
   if (shuffleDict) {
     const shuffler = new StrShuffler(shuffleDict);
     return `/${sessionId}/${shuffler.shuffle(url)}`;
@@ -482,9 +453,8 @@ function renderContent() {
       iframe.className = "browser-tab-content";
       iframe.src = buildSessionUrl(tab.url);
       iframe.title = tab.title;
-     iframe.sandbox =
-        "allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-pointer-lock allow-modals allow-downloads allow-top-navigation-by-user-activation";
-
+      iframe.sandbox =
+                      "allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads";
       iframe.allow =
         "accelerometer; autoplay; clipboard-read; clipboard-write; encrypted-media; fullscreen; geolocation; gyroscope; microphone; picture-in-picture";
 
@@ -512,9 +482,8 @@ function renderContent() {
   });
 }
 
+// ---------- IFRAME LOAD HANDLER ----------
 function handleIframeLoad(tabId, iframe) {
-  console.log("[Methalo] handleIframeLoad fired for tab", tabId);
-
   const tab = state.tabs.find((t) => t.id === tabId);
   if (!tab) return;
 
@@ -523,20 +492,6 @@ function handleIframeLoad(tabId, iframe) {
 
   try {
     const doc = iframe.contentDocument || iframe.contentWindow.document;
-
-    // ⭐ Inject YouTube unlocker script into the iframe
-    try {
-      const script = doc.createElement("script");
-      script.src = "/youtube-injector.js";
-      script.type = "text/javascript";
-      (doc.head || doc.documentElement).appendChild(script);
-      console.log("[Methalo] Injector injected into iframe");
-    } catch (e) {
-      console.warn("Injector failed to load:", e);
-    }
-
-    // ...rest of your code...
-
     if (doc) {
       title = doc.title || tab.url;
       const iconEl = doc.querySelector("link[rel~='icon']");
@@ -636,7 +591,7 @@ async function init() {
   // Load shuffle dictionary once per session
   if (sessionId) {
     try {
-      const res = await fetch(`/${sessionId}/shuffleDict`);
+      const res = await fetch(`/api/shuffleDict?id=${encodeURIComponent(sessionId)}`);
       const dict = await res.json();
       if (dict) shuffleDict = dict;
     } catch (e) {
