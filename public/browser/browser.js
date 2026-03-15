@@ -605,6 +605,13 @@ function createNewTabPage(tabId) {
   return root;
 }
 
+// ---------- RENDER ALL ----------
+function renderAll() {
+  renderTabBar();
+  renderToolbar();
+  renderContent();
+}
+
 // ---------- INIT ----------
 async function init() {
   const sessionId = localStorage.getItem("sessionId");
