@@ -131,7 +131,6 @@
         getAuth, 
         signInWithEmailAndPassword, 
         createUserWithEmailAndPassword,
-        sendPasswordResetEmail,
         GoogleAuthProvider, 
         signInWithPopup 
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -184,60 +183,45 @@
 
     // ⭐ Login
     btnLogin.onclick = async () => {
-    const emailVal = document.getElementById("email").value.trim();
-    const passwordVal = document.getElementById("password").value.trim();
+        const emailVal = document.getElementById("email").value.trim();
+        const passwordVal = document.getElementById("password").value.trim();
 
-    status.innerText = "Logging in...";
+        status.innerText = "Logging in...";
 
-    if (!emailVal || !passwordVal) {
-        status.innerText = "Enter email and password.";
-        return;
-    }
+        if (!emailVal || !passwordVal) {
+            status.innerText = "Enter email and password.";
+            return;
+        }
 
-    try {
-        await signInWithEmailAndPassword(auth, emailVal, passwordVal);
-        await createSessionAndRedirect();
-    } catch (err) {
-        console.error(err);
-        status.innerText = "Login failed. Check email and password.";
-    }
-};
+        try {
+            await signInWithEmailAndPassword(auth, emailVal, passwordVal);
+            await createSessionAndRedirect();
+        } catch (err) {
+            console.error(err);
+            status.innerText = "Login failed. Check email and password.";
+        }
+    };
 
     // ⭐ Signup
-   btnSignup.onclick = async () => {
-    const emailVal = document.getElementById("email").value.trim();
-    const passwordVal = document.getElementById("password").value.trim();
+    btnSignup.onclick = async () => {
+        const emailVal = document.getElementById("email").value.trim();
+        const passwordVal = document.getElementById("password").value.trim();
 
-    status.innerText = "Creating account...";
+        status.innerText = "Creating account...";
 
-    try {
-        await createUserWithEmailAndPassword(auth, emailVal, passwordVal);
-        await createSessionAndRedirect();
-    } catch (err) {
-        status.innerText = "Signup failed. email already in use";
-        console.error(err);
-    }
-};
+        try {
+            await createUserWithEmailAndPassword(auth, emailVal, passwordVal);
+            await createSessionAndRedirect();
+        } catch (err) {
+            status.innerText = "Signup failed. Email already in use.";
+            console.error(err);
+        }
+    };
 
-    // ⭐ Forgot password
-    document.getElementById("forgot").onclick = async () => {
-    const emailVal = document.getElementById("email").value.trim();
-
-    if (!emailVal) {
-        status.innerText = "Enter your email first.";
-        return;
-    }
-
-    status.innerText = "Sending reset email...";
-
-    try {
-        await sendPasswordResetEmail(auth, emailVal);
-        status.innerText = "Password reset email sent.";
-    } catch (err) {
-        status.innerText = "Failed to send reset email.";
-        console.error(err);
-    }
-};
+    // ⭐ Forgot password → redirect to reset page
+    document.getElementById("forgot").onclick = () => {
+        window.location.href = "/account/reset.html";
+    };
 
     // ⭐ Google login
     document.getElementById("googleLogin").onclick = async () => {
