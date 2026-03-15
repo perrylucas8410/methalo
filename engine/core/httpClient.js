@@ -34,30 +34,46 @@ export default async function httpClient(req, res, url) {
 
   const contentType = upstream.headers["content-type"] || "";
 
-  // If HTML → rewrite it
+  // ---------------------------------------------------------
+  // 1. HANDLE REDIRECTS FIRST (CRITICAL)
+  // ---------------------------------------------------------
+  if (upstream.statusCode >= 300 && upstream.statusCode < 400) {
+    const loc = upstream.headers["location"];
+    if (loc) {
+      const absolute = new URL(loc, url).toString();
+      const proxied = "/proxy?url=" + encodeURIComponent(absolute);
+      console.log("Rewriting redirect to:", proxied);
+      res.status(upstream.statusCode);
+      res.setHeader("Location", proxied);
+    }
+
+    // Filter other headers (but NOT Location)
+    filterResponseHeaders(upstream.headers, res);
+
+    return res.end(); // END REDIRECT RESPONSE
+  }
+
+  // ---------------------------------------------------------
+  // 2. HTML REWRITING
+  // ---------------------------------------------------------
   if (contentType.includes("text/html")) {
     const text = await upstream.body.text();
     const rewritten = rewriteHTML(text, url);
 
+    res.status(upstream.statusCode);
     res.setHeader("Content-Type", "text/html");
+
+    // Filter headers AFTER setting content-type
+    filterResponseHeaders(upstream.headers, res);
+
     return res.send(rewritten);
   }
 
-  // Otherwise → stream normally
+  // ---------------------------------------------------------
+  // 3. EVERYTHING ELSE → STREAM
+  // ---------------------------------------------------------
   res.status(upstream.statusCode);
-
-// Handle redirect headers
-if (upstream.statusCode >= 300 && upstream.statusCode < 400) {
-  const loc = upstream.headers["location"];
-  if (loc) {
-    const absolute = new URL(loc, url).toString();
-    const proxied = "/proxy?url=" + encodeURIComponent(absolute);
-    res.setHeader("Location", proxied);
-  }
-}
-
-// Filter other headers
-filterResponseHeaders(upstream.headers, res);
+  filterResponseHeaders(upstream.headers, res);
 
   upstream.body.pipe(res);
 }
