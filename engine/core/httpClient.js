@@ -51,7 +51,7 @@ export default async function httpClient(req, res, url) {
     res.setHeader("Content-Type", "text/html");
     filterResponseHeaders(upstream.headers, res);
 
-    return res.send(rewritten);
+    return res.end(rewritten);
   }
 
   res.status(upstream.statusCode);
