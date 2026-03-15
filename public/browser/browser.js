@@ -467,7 +467,7 @@ window.addEventListener("message", (event) => {
   }
 });
 
-// After override is installed, load the real page
+// ⭐ IMPORTANT: Load the real page AFTER the override is installed
 setTimeout(() => {
   iframe.src = buildSessionUrl(tab.url);
 }, 0);
