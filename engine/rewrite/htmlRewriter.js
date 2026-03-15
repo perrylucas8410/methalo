@@ -4,9 +4,6 @@ import { encodeUrl } from "../core/urlUtils.js";
 
 export function rewriteHTML(html, baseUrl) {
   const root = parse(html);
-  let output = root.toString();
-output = injectShim(output);
-return output;
 
   const attrsToRewrite = ["href", "src", "action"];
 
@@ -29,5 +26,11 @@ return output;
     }
   });
 
-  return root.toString();
+  // Convert DOM back to HTML
+  let output = root.toString();
+
+  // Inject JS shim LAST
+  output = injectShim(output);
+
+  return output;
 }
