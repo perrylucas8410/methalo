@@ -451,6 +451,14 @@ body {
   object-fit: contain;
 }
 
+.new-tab-placeholder {
+  font-size: 1.4rem;
+  color: white;
+  text-align: center;
+  margin-top: 120px;
+  opacity: 0.9;
+}
+
 .new-tab-title {
   font-size: 24px;
   font-weight: 600;
