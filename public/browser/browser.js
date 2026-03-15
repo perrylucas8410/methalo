@@ -484,7 +484,7 @@ function renderContent() {
 
 // ---------- IFRAME LOAD HANDLER ----------
 function handleIframeLoad(tabId, iframe) {
-  const tab = state.tabs.find((t) => t.id === tabId);
+  const tab = state.tabs.find(function (t) { return t.id === tabId; });
   if (!tab) return;
 
   let title = tab.url;
@@ -493,46 +493,21 @@ function handleIframeLoad(tabId, iframe) {
   try {
     const win = iframe.contentWindow;
 
-    // ⭐ Convert popup attempts into new Methalo tabs
-    win.open = function(url, name, features) {
+    // Intercept popup attempts and turn them into Methalo tabs
+    win.open = function (url, name, features) {
       if (!url) return null;
 
       addTab(url);
 
+      // Fake window object so scripts don't crash
       return {
         closed: false,
-        close() { this.closed = true; },
-        focus() {},
-        blur() {}
+        close: function () { this.closed = true; },
+        focus: function () {},
+        blur: function () {}
       };
     };
 
-    // ⭐ Extract title + favicon
-    const doc = win.document;
-    if (doc) {
-      title = doc.title || tab.url;
-      const iconEl = doc.querySelector("link[rel~='icon']");
-      if (iconEl && iconEl.href) {
-        favicon = iconEl.href;
-      } else {
-        const origin = new URL(tab.url).origin;
-        favicon = origin + "/favicon.ico";
-      }
-    }
-  } catch {
-    try {
-      title = new URL(tab.url).hostname;
-    } catch {
-      title = tab.url;
-    }
-  }
-
-  updateTab(tabId, { title, favicon, isLoading: false });
-  renderTabBar();
-  renderToolbar();
-}
-
-    // ⭐ Extract title + favicon
     const doc = win.document;
     if (doc) {
       title = doc.title || tab.url;
@@ -547,12 +522,12 @@ function handleIframeLoad(tabId, iframe) {
   } catch (e) {
     try {
       title = new URL(tab.url).hostname;
-    } catch {
+    } catch (e2) {
       title = tab.url;
     }
   }
 
-  updateTab(tabId, { title, favicon, isLoading: false });
+  updateTab(tabId, { title: title, favicon: favicon, isLoading: false });
   renderTabBar();
   renderToolbar();
 }
