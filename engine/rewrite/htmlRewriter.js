@@ -1,3 +1,4 @@
+import { injectShim } from "./injector.js";
 import { parse } from "node-html-parser";
 import { encodeUrl } from "../core/urlUtils.js";
 
