@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Methalo Account</title>
+  <link rel="stylesheet" href="account.css">
+</head>
+<body>
+
+  <div id="account-container">
+
+    <h1>Account Settings</h1>
+
+    <!-- Email (read-only) -->
+    <div class="section">
+      <label>Email</label>
+      <div id="account-email" class="readonly"></div>
+    </div>
+
+    <!-- Display Name -->
+    <div class="section">
+      <label>Display Name</label>
+      <input type="text" id="account-name">
+      <button id="save-name">Save</button>
+    </div>
+
+    <!-- Google Link/Unlink -->
+    <div class="section">
+      <label>Linked Google Account</label>
+      <div id="google-status"></div>
+      <button id="link-google">Link Google Account</button>
+      <button id="unlink-google">Unlink Google Account</button>
+    </div>
+
+    <!-- Change Password -->
+    <div class="section">
+      <label>Change Password</label>
+
+      <div id="password-error" class="error-message"></div>
+
+      <input type="password" id="current-password" placeholder="Current password">
+      <input type="password" id="new-password" placeholder="New password">
+      <input type="password" id="confirm-password" placeholder="Confirm new password">
+
+      <button id="change-password">Change Password</button>
+
+      <div id="forgot-password" class="forgot-link">Forgot password?</div>
+    </div>
+
+  </div>
+
+  <!-- Firebase -->
+  <script src="/firebase-app.js"></script>
+  <script src="/firebase-auth.js"></script>
+
+  <!-- Your logic -->
+  <script src="account.js"></script>
+
+</body>
+</html>
