@@ -34,7 +34,7 @@ class StrShuffler {
   }
 }
 
-let shuffleDict = null; // loaded once per session
+let shuffleDict = null;
 
 // ---------- GLOBAL STATE ----------
 function createTab(url = "") {
@@ -64,15 +64,35 @@ const tabBarEl = document.getElementById("tab-bar");
 const toolbarEl = document.getElementById("toolbar");
 const contentEl = document.getElementById("content-area");
 
+// ---------- PROFILE UI UPDATER ----------
+function updateProfileUI() {
+  const user = window.METHALO_USER;
+  if (!user) return;
+
+  user.reload().then(() => {
+    const name = user.displayName || "Guest";
+    const email = user.email || "";
+
+    const nameEl = document.querySelector(".profile-menu-name");
+    if (nameEl) nameEl.textContent = name;
+
+    const emailEl = document.querySelector(".profile-menu-email");
+    if (emailEl) emailEl.textContent = email;
+
+    const avatarImg = document.querySelector("#profile-avatar img");
+    if (avatarImg) avatarImg.src = user.photoURL || "/icons/profile-default.png";
+
+    const headerImg = document.querySelector(".profile-menu-avatar img");
+    if (headerImg) headerImg.src = user.photoURL || "/icons/profile-default.png";
+  });
+}
+
 // ---------- RAMMERHEAD SESSION URL BUILDER ----------
 function buildSessionUrl(url) {
   if (!url) return "about:blank";
   const sessionId = localStorage.getItem("sessionId");
   if (!sessionId) return "about:blank";
 
-  // EXACT original Rammerhead behavior:
-  // If shuffleDict exists → shuffle(url)
-  // If not → plain url
   if (shuffleDict) {
     const shuffler = new StrShuffler(shuffleDict);
     return `/${sessionId}/${shuffler.shuffle(url)}`;
@@ -196,13 +216,6 @@ function refresh(tabId) {
   renderAll();
 }
 
-// ---------- RENDER ROOT ----------
-function renderAll() {
-  renderTabBar();
-  renderToolbar();
-  renderContent();
-}
-
 // ---------- TAB BAR ----------
 function renderTabBar() {
   tabBarEl.innerHTML = "";
@@ -264,6 +277,7 @@ function renderTabBar() {
   newTabBtn.addEventListener("click", () => addTab());
   tabBarEl.appendChild(newTabBtn);
 
+  // ---------- PROFILE MENU ----------
   const profileContainer = document.createElement("div");
   profileContainer.id = "profile-container";
 
@@ -304,12 +318,20 @@ function renderTabBar() {
   header.appendChild(headerAvatar);
   header.appendChild(headerText);
 
+  // ⭐ Update profile UI with latest Firebase data
+  updateProfileUI();
+
   const divider = document.createElement("div");
   divider.className = "profile-menu-divider";
 
   const manageItem = document.createElement("div");
   manageItem.className = "profile-menu-item";
   manageItem.textContent = "Manage Account";
+
+  // ⭐ Manage Account redirect
+  manageItem.addEventListener("click", () => {
+    window.location.href = "/account/account.html";
+  });
 
   const signOutItem = document.createElement("div");
   signOutItem.className = "profile-menu-item";
@@ -341,6 +363,9 @@ function renderTabBar() {
   });
 
   tabBarEl.appendChild(profileContainer);
+
+  // ⭐ Ensure profile UI always stays fresh
+  updateProfileUI();
 }
 
 // ---------- TOOLBAR ----------
@@ -454,7 +479,7 @@ function renderContent() {
       iframe.src = buildSessionUrl(tab.url);
       iframe.title = tab.title;
       iframe.sandbox =
-                      "allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads";
+        "allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads";
       iframe.allow =
         "accelerometer; autoplay; clipboard-read; clipboard-write; encrypted-media; fullscreen; geolocation; gyroscope; microphone; picture-in-picture";
 
@@ -551,65 +576,4 @@ function createNewTabPage(tabId) {
   const search = document.createElement("div");
   search.className = "new-tab-search";
 
-  const searchIcon = document.createElement("div");
-  searchIcon.className = "new-tab-search-icon";
-
-  const input = document.createElement("input");
-  input.className = "new-tab-search-input";
-  input.type = "text";
-  input.placeholder = "Search the web or enter a URL";
-
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      navigate(tabId, input.value);
-    }
-  });
-
-  search.appendChild(searchIcon);
-  search.appendChild(input);
-  searchContainer.appendChild(search);
-
-  content.appendChild(logoWrap);
-  content.appendChild(title);
-  content.appendChild(subtitle);
-  content.appendChild(searchContainer);
-
-  root.appendChild(gradientOverlay);
-  root.appendChild
-  root.appendChild(gradientOverlay);
-  root.appendChild(particles);
-  root.appendChild(content);
-
-return root;
-}
-
-// ---------- INIT ----------
-async function init() {
-  const sessionId = localStorage.getItem("sessionId");
-
-  // Load shuffle dictionary once per session
-  if (sessionId) {
-    try {
-      const res = await fetch(`/api/shuffleDict?id=${encodeURIComponent(sessionId)}`);
-      const dict = await res.json();
-      if (dict) shuffleDict = dict;
-    } catch (e) {
-      console.warn("Failed to load shuffleDict, using plain URLs", e);
-    }
-  }
-
-  renderAll();
-}
-
-// ---------- WAIT FOR FIREBASE USER BEFORE RUNNING UI ----------
-if (!window.METHALO_USER) {
-  const waitForUser = setInterval(() => {
-    if (window.METHALO_USER) {
-      clearInterval(waitForUser);
-      init(); // start browser AFTER user is ready
-    }
-  }, 50);
-} else {
-  init();
-}
+  const search
