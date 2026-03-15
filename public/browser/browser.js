@@ -453,7 +453,7 @@ function renderContent() {
       iframe.className = "browser-tab-content";
       iframe.src = buildSessionUrl(tab.url);
       iframe.title = tab.title;
-      iframe.sandbox =
+     iframe.sandbox =
         "allow-forms allow-modals allow-pointer-lock allow-same-origin allow-scripts allow-downloads";
       iframe.allow =
         "accelerometer; autoplay; clipboard-read; clipboard-write; encrypted-media; fullscreen; geolocation; gyroscope; microphone; picture-in-picture";
