@@ -448,29 +448,35 @@ function renderContent() {
       const iframe = document.createElement("iframe");
 iframe.className = "browser-tab-content";
 
-// Load a blank document first so we can override window.open BEFORE Rammerhead loads
-iframe.srcdoc = `
-  <script>
-    window.open = function(url) {
-      if (!url) return null;
-      parent.postMessage({ type: "navigate-in-iframe", url: url }, "*");
-      return null;
-    };
-  </script>
-`;
+if (tab.url) {
+  // Load a blank document first so we can override window.open BEFORE Rammerhead loads
+  iframe.srcdoc = `
+    <script>
+      window.open = function(url) {
+        if (!url) return null;
+        parent.postMessage({ type: "navigate-in-iframe", url: url }, "*");
+        return null;
+      };
+    </script>
+  `;
 
-// Listen for navigation requests from the srcdoc sandbox
-window.addEventListener("message", (event) => {
-  if (event.data?.type === "navigate-in-iframe") {
-    const url = event.data.url;
-    iframe.src = buildSessionUrl(url);
-  }
-});
+  // Listen for navigation requests from the srcdoc sandbox
+  window.addEventListener("message", (event) => {
+    if (event.data?.type === "navigate-in-iframe") {
+      const url = event.data.url;
+      iframe.src = buildSessionUrl(url);
+    }
+  });
 
-// ⭐ IMPORTANT: Load the real page AFTER the override is installed
-setTimeout(() => {
-  iframe.src = buildSessionUrl(tab.url);
-}, 0);
+  // Load the real page AFTER the override is installed
+  setTimeout(() => {
+    iframe.src = buildSessionUrl(tab.url);
+  }, 0);
+
+} else {
+  // New tab page → NO srcdoc override
+  iframe.src = "about:blank";
+}
 
       iframe.title = tab.title;
       iframe.sandbox =
