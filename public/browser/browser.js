@@ -491,7 +491,26 @@ function handleIframeLoad(tabId, iframe) {
   let favicon;
 
   try {
-    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    const win = iframe.contentWindow;
+
+    // ⭐ Intercept Rammerhead's window.open so navigation stays in the same tab
+    win.open = function (url) {
+      if (!url) return null;
+      navigate(tabId, url);
+      return null;
+    };
+
+    // ⭐ Intercept target="_blank" links inside the iframe
+    win.addEventListener("click", (e) => {
+      const anchor = e.target.closest("a[target='_blank']");
+      if (anchor && anchor.href) {
+        e.preventDefault();
+        navigate(tabId, anchor.href);
+      }
+    });
+
+    // ⭐ Extract title + favicon
+    const doc = win.document;
     if (doc) {
       title = doc.title || tab.url;
       const iconEl = doc.querySelector("link[rel~='icon']");
