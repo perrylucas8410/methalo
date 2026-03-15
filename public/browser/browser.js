@@ -64,7 +64,7 @@ const tabBarEl = document.getElementById("tab-bar");
 const toolbarEl = document.getElementById("toolbar");
 const contentEl = document.getElementById("content-area");
 
-// ---------- PROFILE UI UPDATER ----------
+// ⭐ MINIMAL ADDITION — Update profile UI
 function updateProfileUI() {
   const user = window.METHALO_USER;
   if (!user) return;
@@ -215,8 +215,7 @@ function refresh(tabId) {
   if (iframe) iframe.src = iframe.src;
   renderAll();
 }
-
-// ---------- TAB BAR ----------
+ // ---------- TAB BAR ----------
 function renderTabBar() {
   tabBarEl.innerHTML = "";
 
@@ -277,7 +276,6 @@ function renderTabBar() {
   newTabBtn.addEventListener("click", () => addTab());
   tabBarEl.appendChild(newTabBtn);
 
-  // ---------- PROFILE MENU ----------
   const profileContainer = document.createElement("div");
   profileContainer.id = "profile-container";
 
@@ -318,7 +316,7 @@ function renderTabBar() {
   header.appendChild(headerAvatar);
   header.appendChild(headerText);
 
-  // ⭐ Update profile UI with latest Firebase data
+  // ⭐ MINIMAL ADDITION — refresh profile UI
   updateProfileUI();
 
   const divider = document.createElement("div");
@@ -328,7 +326,7 @@ function renderTabBar() {
   manageItem.className = "profile-menu-item";
   manageItem.textContent = "Manage Account";
 
-  // ⭐ Manage Account redirect
+  // ⭐ MINIMAL ADDITION — redirect
   manageItem.addEventListener("click", () => {
     window.location.href = "/account/account.html";
   });
@@ -364,7 +362,7 @@ function renderTabBar() {
 
   tabBarEl.appendChild(profileContainer);
 
-  // ⭐ Ensure profile UI always stays fresh
+  // ⭐ MINIMAL ADDITION — keep profile fresh
   updateProfileUI();
 }
 
@@ -576,4 +574,63 @@ function createNewTabPage(tabId) {
   const search = document.createElement("div");
   search.className = "new-tab-search";
 
-  const search
+  const searchIcon = document.createElement("div");
+  searchIcon.className = "new-tab-search-icon";
+
+  const input = document.createElement("input");
+  input.className = "new-tab-search-input";
+  input.type = "text";
+  input.placeholder = "Search the web or enter a URL";
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      navigate(tabId, input.value);
+    }
+  });
+
+  search.appendChild(searchIcon);
+  search.appendChild(input);
+  searchContainer.appendChild(search);
+
+  content.appendChild(logoWrap);
+  content.appendChild(title);
+  content.appendChild(subtitle);
+  content.appendChild(searchContainer);
+
+  root.appendChild(gradientOverlay);
+  root.appendChild(particles);
+  root.appendChild(content);
+
+  return root;
+}
+
+// ---------- INIT ----------
+async function init() {
+  const sessionId = localStorage.getItem("sessionId");
+
+  // Load shuffle dictionary once per session
+  if (sessionId) {
+    try {
+      const res = await fetch(`/api/shuffleDict?id=${encodeURIComponent(sessionId)}`);
+      const dict = await res.json();
+      if (dict) shuffleDict = dict;
+    } catch (e) {
+      console.warn("Failed to load shuffleDict, using plain URLs", e);
+    }
+  }
+
+  renderAll();
+}
+
+// ---------- WAIT FOR FIREBASE USER BEFORE RUNNING UI ----------
+if (!window.METHALO_USER) {
+  const waitForUser = setInterval(() => {
+    if (window.METHALO_USER) {
+      clearInterval(waitForUser);
+      init(); // start browser AFTER user is ready
+    }
+  }, 50);
+} else {
+  init();
+}
