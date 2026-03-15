@@ -56,7 +56,7 @@ const state = {
   activeTabId: null,
   iframeMap: {}
 };
-
+fix
 state.activeTabId = state.tabs[0].id;
 
 // ---------- DOM REFERENCES ----------
@@ -454,7 +454,7 @@ function renderContent() {
       iframe.src = buildSessionUrl(tab.url);
       iframe.title = tab.title;
       iframe.sandbox =
-                      "allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads";
+        "allow-forms allow-modals allow-pointer-lock allow-same-origin allow-scripts allow-downloads";
       iframe.allow =
         "accelerometer; autoplay; clipboard-read; clipboard-write; encrypted-media; fullscreen; geolocation; gyroscope; microphone; picture-in-picture";
 
@@ -575,8 +575,6 @@ function createNewTabPage(tabId) {
   content.appendChild(subtitle);
   content.appendChild(searchContainer);
 
-  root.appendChild(gradientOverlay);
-  root.appendChild
   root.appendChild(gradientOverlay);
   root.appendChild(particles);
   root.appendChild(content);
