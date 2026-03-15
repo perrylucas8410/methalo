@@ -3,6 +3,13 @@ firebase.initializeApp(window.firebaseConfig);
 const auth = firebase.auth();
 const provider = new firebase.auth.GoogleAuthProvider();
 
+// Helper to set inline messages
+function setMessage(id, text, type) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = "message " + type; // "message error" or "message success"
+}
+
 // PROTECT PAGE
 auth.onAuthStateChanged((user) => {
   if (!user) {
@@ -24,33 +31,39 @@ document.getElementById("save-name").addEventListener("click", async () => {
   const user = auth.currentUser;
   const newName = document.getElementById("account-name").value;
 
-  await user.updateProfile({ displayName: newName });
-  alert("Name updated!");
+  try {
+    await user.updateProfile({ displayName: newName });
+    setMessage("name-message", "Name updated!", "success");
+  } catch (err) {
+    setMessage("name-message", err.message, "error");
+  }
 });
 
 // Link Google
 document.getElementById("link-google").addEventListener("click", async () => {
   const user = auth.currentUser;
+
   try {
     await user.linkWithPopup(provider);
-    alert("Google account linked!");
+    setMessage("google-message", "Google account linked!", "success");
     location.reload();
   } catch (err) {
     console.error(err);
-    alert("Could not link Google account.");
+    setMessage("google-message", err.message, "error");
   }
 });
 
 // Unlink Google
 document.getElementById("unlink-google").addEventListener("click", async () => {
   const user = auth.currentUser;
+
   try {
     await user.unlink("google.com");
-    alert("Google account unlinked!");
+    setMessage("google-message", "Google account unlinked!", "success");
     location.reload();
   } catch (err) {
     console.error(err);
-    alert("Could not unlink Google account.");
+    setMessage("google-message", err.message, "error");
   }
 });
 
@@ -61,9 +74,10 @@ document.getElementById("change-password").addEventListener("click", async () =>
   const current = document.getElementById("current-password").value;
   const newPass = document.getElementById("new-password").value;
   const confirm = document.getElementById("confirm-password").value;
-  const errorBox = document.getElementById("password-error");
 
+  const errorBox = document.getElementById("password-error");
   errorBox.textContent = "";
+  setMessage("password-message", "", ""); // clear previous
 
   if (newPass !== confirm) {
     errorBox.textContent = "Passwords don't match";
@@ -74,10 +88,11 @@ document.getElementById("change-password").addEventListener("click", async () =>
     const cred = firebase.auth.EmailAuthProvider.credential(user.email, current);
     await user.reauthenticateWithCredential(cred);
     await user.updatePassword(newPass);
-    alert("Password changed successfully!");
+
+    setMessage("password-message", "Password changed successfully!", "success");
   } catch (err) {
     console.error(err);
-    errorBox.textContent = "Incorrect current password";
+    setMessage("password-message", err.message, "error");
   }
 });
 
