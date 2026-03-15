@@ -56,7 +56,7 @@ const state = {
   activeTabId: null,
   iframeMap: {}
 };
-fix
+
 state.activeTabId = state.tabs[0].id;
 
 // ---------- DOM REFERENCES ----------
