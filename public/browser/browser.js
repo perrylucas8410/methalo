@@ -453,22 +453,11 @@ function renderContent() {
         try {
           const win = iframe.contentWindow;
 
-          win.open = function (url, name, features) {
-            if (!url) return null;
-
-            addTab(url);
-
-            return {
-              closed: false,
-              close: function () { this.closed = true; },
-              focus: function () {},
-              blur: function () {}
-            };
-          };
-        } catch (e) {
-          console.warn("Early override failed:", e);
-        }
-      };
+          win.open = function (url) {
+  if (!url) return null;
+  iframe.src = buildSessionUrl(url);
+  return null;
+};
 
       // Now safe to set src
       iframe.src = buildSessionUrl(tab.url);
@@ -515,19 +504,11 @@ function handleIframeLoad(tabId, iframe) {
     const win = iframe.contentWindow;
 
     // Intercept popup attempts and turn them into Methalo tabs (fallback override)
-    win.open = function (url, name, features) {
-      if (!url) return null;
-
-      addTab(url);
-
-      // Fake window object so scripts don't crash
-      return {
-        closed: false,
-        close: function () { this.closed = true; },
-        focus: function () {},
-        blur: function () {}
-      };
-    };
+    win.open = function (url) {
+  if (!url) return null;
+  iframe.src = buildSessionUrl(url);
+  return null;
+};
 
     const doc = win.document;
     if (doc) {
