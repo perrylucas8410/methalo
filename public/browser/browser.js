@@ -70,9 +70,6 @@ function buildSessionUrl(url) {
   const sessionId = localStorage.getItem("sessionId");
   if (!sessionId) return "about:blank";
 
-  // EXACT original Rammerhead behavior:
-  // If shuffleDict exists → shuffle(url)
-  // If not → plain url
   if (shuffleDict) {
     const shuffler = new StrShuffler(shuffleDict);
     return `/${sessionId}/${shuffler.shuffle(url)}`;
@@ -202,7 +199,6 @@ function renderAll() {
   renderToolbar();
   renderContent();
 }
-
 // ---------- TAB BAR ----------
 function renderTabBar() {
   tabBarEl.innerHTML = "";
@@ -451,10 +447,35 @@ function renderContent() {
     if (tab.url) {
       const iframe = document.createElement("iframe");
       iframe.className = "browser-tab-content";
+
+      // ⭐ EARLY POPUP OVERRIDE (critical fix)
+      iframe.onload = function () {
+        try {
+          const win = iframe.contentWindow;
+
+          win.open = function (url, name, features) {
+            if (!url) return null;
+
+            addTab(url);
+
+            return {
+              closed: false,
+              close: function () { this.closed = true; },
+              focus: function () {},
+              blur: function () {}
+            };
+          };
+        } catch (e) {
+          console.warn("Early override failed:", e);
+        }
+      };
+
+      // Now safe to set src
       iframe.src = buildSessionUrl(tab.url);
+
       iframe.title = tab.title;
-     iframe.sandbox =
-  "allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads";
+      iframe.sandbox =
+        "allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads";
       iframe.allow =
         "accelerometer; autoplay; clipboard-read; clipboard-write; encrypted-media; fullscreen; geolocation; gyroscope; microphone; picture-in-picture";
 
@@ -493,7 +514,7 @@ function handleIframeLoad(tabId, iframe) {
   try {
     const win = iframe.contentWindow;
 
-    // Intercept popup attempts and turn them into Methalo tabs
+    // Intercept popup attempts and turn them into Methalo tabs (fallback override)
     win.open = function (url, name, features) {
       if (!url) return null;
 
@@ -596,7 +617,7 @@ function createNewTabPage(tabId) {
   root.appendChild(particles);
   root.appendChild(content);
 
-return root;
+  return root;
 }
 
 // ---------- INIT ----------
