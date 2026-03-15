@@ -6,8 +6,9 @@ const provider = new firebase.auth.GoogleAuthProvider();
 // Helper to set inline messages
 function setMessage(id, text, type) {
   const el = document.getElementById(id);
+  if (!el) return;
   el.textContent = text;
-  el.className = "message " + type; // "message error" or "message success"
+  el.className = text ? "message " + type : "message";
 }
 
 // PROTECT PAGE
@@ -31,10 +32,12 @@ document.getElementById("save-name").addEventListener("click", async () => {
   const user = auth.currentUser;
   const newName = document.getElementById("account-name").value;
 
+  setMessage("name-message", "", "");
   try {
     await user.updateProfile({ displayName: newName });
     setMessage("name-message", "Name updated!", "success");
   } catch (err) {
+    console.error(err);
     setMessage("name-message", err.message, "error");
   }
 });
@@ -43,6 +46,7 @@ document.getElementById("save-name").addEventListener("click", async () => {
 document.getElementById("link-google").addEventListener("click", async () => {
   const user = auth.currentUser;
 
+  setMessage("google-message", "", "");
   try {
     await user.linkWithPopup(provider);
     setMessage("google-message", "Google account linked!", "success");
@@ -57,6 +61,7 @@ document.getElementById("link-google").addEventListener("click", async () => {
 document.getElementById("unlink-google").addEventListener("click", async () => {
   const user = auth.currentUser;
 
+  setMessage("google-message", "", "");
   try {
     await user.unlink("google.com");
     setMessage("google-message", "Google account unlinked!", "success");
@@ -77,7 +82,7 @@ document.getElementById("change-password").addEventListener("click", async () =>
 
   const errorBox = document.getElementById("password-error");
   errorBox.textContent = "";
-  setMessage("password-message", "", ""); // clear previous
+  setMessage("password-message", "", "");
 
   if (newPass !== confirm) {
     errorBox.textContent = "Passwords don't match";
@@ -99,4 +104,16 @@ document.getElementById("change-password").addEventListener("click", async () =>
 // Forgot password
 document.getElementById("forgot-password").addEventListener("click", () => {
   window.location.href = "/account/reset.html";
+});
+
+// Sign Out
+document.getElementById("signout-button").addEventListener("click", async () => {
+  setMessage("signout-message", "", "");
+  try {
+    await auth.signOut();
+    window.location.href = "/index.html";
+  } catch (err) {
+    console.error(err);
+    setMessage("signout-message", err.message, "error");
+  }
 });
