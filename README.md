@@ -1,3 +1,6 @@
+This uses rammehead as a source and just changes the UI and adds login but like the current rammerhead website youtube is broken and some pages need captcha but most work.
+
+
 Clone the repo
 
 `git clone https://github.com/perrylucas8410/methalo.git`
