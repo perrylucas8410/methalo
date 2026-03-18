@@ -15,14 +15,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/binary-person/rammerhead.git"
+    "url": "git+https://github.com/perrylucas8410/methalo.git"
   },
-  "author": "Simon Cheng <simoncheng559@gmail.com> (https://github.com/binary-person)",
+  "author": "Lucas Perry <perrylucas8410@gmail.com> (https://github.com/perrylucas8410)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/binary-person/rammerhead/issues"
+    "url": "https://github.com/perrylucas8410/methalo/issues"
   },
-  "homepage": "https://github.com/binary-person/rammerhead#readme",
+  "homepage": "https://github.com/perrylucas8410/methalo#readme",
   "dependencies": {
     "async-exit-hook": "^2.0.1",
     "lru-cache": "^7.14.1",
