@@ -558,7 +558,7 @@ function createNewTabPage(tabId) {
   // Placeholder text (you can change or remove this)
   const placeholder = document.createElement("div");
   placeholder.className = "new-tab-placeholder";
-  placeholder.textContent = "This browser is a beta and is current in development and some things wont work such as youtube and most AI services like ChatGPT or Copilot and unless you directly input a url into the search bar it will open a mini window when you search normally and then click something I'm currently working on making that all work please be patient.";
+  placeholder.textContent = "This browser is currently in development, and some things won't work, such as YouTube with a normal personal account; however, some school or organization accounts will work for it. Also, some websites are strict and have more security, so they block proxies. Also, when searching, if you don't put the entire URL into the search bar, it will open it in a pop-up instead of the browser, which can cause problems for websites. Also, I'll be making some better versions that use more resources, so I can't make infinite, but message me, and I'll give you the passcode for them, and you log in at premium.methalo.online.";
 
   content.appendChild(placeholder);
 
