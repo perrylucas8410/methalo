@@ -12,7 +12,7 @@ module.exports = {
     bindingAddress: '127.0.0.1',
     port: 8080,
     crossDomainPort: null,
-    publicDir: path.join(__dirname, '../public'), // set to null to disable
+    publicDir: path.join(__dirname, '../app/dist'), // set to null to disable
 
     // enable or disable multithreading
     enableWorkers,
