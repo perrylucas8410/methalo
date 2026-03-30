@@ -25,7 +25,14 @@ module.exports = {
     // this function's return object will determine how the client url rewriting will work.
     // set them differently from bindingAddress and port if rammerhead is being served
     // from a reverse proxy.
-    getServerInfo: () => ({ hostname: 'methalo.online', port: 443, crossDomainPort: null, protocol: 'https:' }),
+    getServerInfo: (req) => {
+        const host = req.headers.host || 'methalo.online';
+        const [hostname, portStr] = host.split(':');
+        const protocol = (req.connection.encrypted || req.headers['x-forwarded-proto'] === 'https') ? 'https:' : 'http:';
+        const port = portStr ? parseInt(portStr) : (protocol === 'https:' ? 443 : 80);
+        
+        return { hostname, port, crossDomainPort: null, protocol };
+    },
     // example of non-hard-coding the hostname header
     // getServerInfo: (req) => {
     //     return { hostname: new URL('http://' + req.headers.host).hostname, port: 443, crossDomainPort: 8443, protocol: 'https: };
